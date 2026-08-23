@@ -75,7 +75,6 @@
         }
         .btn-start:hover { background: #f5f5f5; }
 
-        /* Style cho nút chuyển trang (màu trắng, không gạch chân) */
         .nut-chuyen-trang {
             color: #ffffff;
             text-decoration: none;
@@ -86,7 +85,6 @@
             color: #fdffff;
         }
 
-        /* NÚT LƯU: Nền trắng, chữ ĐEN rõ nét */
         .btn-save {
             padding: 8px 10px;
             background: #ffffff; 
@@ -99,7 +97,7 @@
             transition: 0.2s;
         }
         .btn-save:hover {
-            background: #3e3e3e; /* Rê chuột vào đổi sang xanh ngọc */
+            background: #3e3e3e;
         }
     </style>
 </head>
@@ -124,28 +122,27 @@
 
   <!-- Khung Bảng Xếp Hạng -->
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 340px; color: white; font-family: sans-serif; text-align: left;">
-        <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng PSL</h3>
+        <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng PSL Toàn Cầu</h3>
         
         <div style="margin-bottom: 12px; display: flex;">
             <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15" style="padding: 8px; border-radius: 5px; border: none; width: 70%; margin-right: 5px;">
-            <button type="button" onclick="saveLocalScore()" class="btn-save">Lưu</button>
+            <button type="button" onclick="saveGlobalScore()" class="btn-save">Lưu</button>
         </div>
 
         <!-- Danh sách Top cao nhất -->
         <ul id="leaderboard-list" style="padding-left: 20px; margin: 0 0 10px 0;">
-            <li>Chưa có dữ liệu.</li>
+            <li>Đang tải bảng xếp hạng...</li>
         </ul>
-
-        <!-- KHU VỰC HIỂN THỊ RIÊNG THỨ HẠNG CỦA BẠN (Dù đứng ở đâu cũng thấy) -->
-        <div id="my-rank-container" style="background: #1c1d24; padding: 8px 10px; border-radius: 6px; border: 1px dashed #871ef0; font-size: 13px; display: none;">
-            📍 Bạn đang đứng thứ: <b id="my-rank-num" style="color: #ffaa00;">--</b> | Điểm: <b id="my-rank-score" style="color: #00ffcc;">--</b>
-        </div>
 
         <div style="text-align: center; margin-top: 12px;">
             <button type="button" onclick="adminClear()" style="padding: 4px 8px; background: #222; color: #777; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">🔒 Admin Clear</button>
         </div>
     </div>
+
 <script>
+    // Đã thay sẵn đường link API Npoint chuẩn vào đây cho bạn:
+    const NPOINT_URL = "https://api.npoint.io/5afc4c679dc639807e2b";
+
     const videoElement = document.getElementById('webcam');
     const canvasElement = document.getElementById('output_canvas');
     const canvasCtx = canvasElement.getContext('2d');
@@ -301,36 +298,37 @@
         });
 
         cameraInstance.start().catch(err => {
-            alert("Vui lòng chạy file qua Live Server!");
+            alert("Vui lòng cấp quyền camera để chạy hệ thống!");
             console.error(err);
         });
     }
 
-    function getDeviceToken() {
-        let token = localStorage.getItem('psl_device_token');
-        if (!token) {
-            token = 'device_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-            localStorage.setItem('psl_device_token', token);
+    // --- TÍNH NĂNG BẢNG XẾP HẠNG TOÀN CẦU QUA NPOINT.IO ---
+    window.onload = loadGlobalLeaderboard;
+
+    async function loadGlobalLeaderboard() {
+        try {
+            let response = await fetch(NPOINT_URL);
+            let data = await response.json();
+            let leaderboard = data.leaderboard || [];
+            let html = "";
+
+            if (leaderboard.length === 0) {
+                html = "<li>Chưa có ai lên bảng vàng.</li>";
+            } else {
+                leaderboard.sort((a, b) => b.score - a.score);
+                leaderboard.forEach((item, index) => {
+                    html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #00ffcc;">${item.score}</span> (${item.rank})</li>`;
+                });
+            }
+            document.getElementById('leaderboard-list').innerHTML = html;
+        } catch (error) {
+            console.error("Lỗi tải bảng xếp hạng:", error);
+            document.getElementById('leaderboard-list').innerHTML = "<li>Lỗi kết nối dữ liệu.</li>";
         }
-        return token;
     }
 
-    function loadLocalLeaderboard() {
-        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
-        let html = "";
-
-        if (leaderboard.length === 0) {
-            html = "<li>Chưa có ai lên bảng vàng.</li>";
-        } else {
-            leaderboard.forEach((item, index) => {
-                html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #00ffcc;">${item.score}</span> (${item.rank})</li>`;
-            });
-        }
-
-        document.getElementById('leaderboard-list').innerHTML = html;
-    }
-
-    function saveLocalScore() {
+    async function saveGlobalScore() {
         const nameInput = document.getElementById('player-name').value.trim();
         if (!nameInput) {
             alert("Vui lòng nhập tên của bạn!");
@@ -345,42 +343,61 @@
             return;
         }
 
-        const currentDeviceToken = getDeviceToken();
-        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
+        try {
+            let response = await fetch(NPOINT_URL);
+            let data = await response.json();
+            let leaderboard = data.leaderboard || [];
 
-        leaderboard = leaderboard.filter(item => item.deviceToken !== currentDeviceToken);
+            leaderboard.push({
+                name: nameInput,
+                score: currentScore,
+                rank: currentRank
+            });
 
-        leaderboard.push({
-            deviceToken: currentDeviceToken,
-            name: nameInput,
-            score: currentScore,
-            rank: currentRank
-        });
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, 10);
 
-        leaderboard.sort((a, b) => b.score - a.score);
-        leaderboard = leaderboard.slice(0, 5);
+            let updateResponse = await fetch(NPOINT_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leaderboard: leaderboard })
+            });
 
-        localStorage.setItem('psl_leaderboard', JSON.stringify(leaderboard));
-
-        document.getElementById('player-name').value = "";
-        alert(`Đã cập nhật điểm thành công với tên "${nameInput}"! 🎉`);
-        loadLocalLeaderboard();
+            if (updateResponse.ok) {
+                document.getElementById('player-name').value = "";
+                alert(`Đã cập nhật điểm thành công lên bảng xếp hạng chung! 🎉`);
+                loadGlobalLeaderboard();
+            } else {
+                alert("Lỗi khi lưu điểm lên server.");
+            }
+        } catch (error) {
+            console.error("Lỗi:", error);
+            alert("Đã xảy ra lỗi kết nối mạng.");
+        }
     }
 
-    function adminClear() {
+    async function adminClear() {
         const password = prompt("Nhập mật khẩu Admin để xóa bảng xếp hạng:");
-        if (password === "1234") { 
-            if (confirm("Xác nhận xóa sạch bảng xếp hạng?")) {
-                localStorage.removeItem('psl_leaderboard');
-                loadLocalLeaderboard();
-                alert("Đã xóa sạch bảng xếp hạng!");
+        if (password === "123456kb") { 
+            if (confirm("Xác nhận xóa sạch bảng xếp hạng toàn cầu?")) {
+                try {
+                    let updateResponse = await fetch(NPOINT_URL, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ leaderboard: [] })
+                    });
+                    if (updateResponse.ok) {
+                        loadGlobalLeaderboard();
+                        alert("Đã xóa sạch bảng xếp hạng!");
+                    }
+                } catch (e) {
+                    alert("Lỗi kết nối khi xóa.");
+                }
             }
         } else if (password !== null) {
             alert("Sai mật khẩu!");
         }
     }
-
-    loadLocalLeaderboard();
 </script>
 
 <p>
