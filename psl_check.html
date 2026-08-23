@@ -140,8 +140,10 @@
     </div>
 
 <script>
-    // Đã thay sẵn đường link API Npoint chuẩn vào đây cho bạn:
-    const NPOINT_URL = "https://api.npoint.io/5afc4c679dc639807e2b";
+    // --- THAY THÔNG TIN JSONBIN CỦA BẠN VÀO ĐÂY ---
+    const BIN_ID = "66f30419acd3cb34a88981f9"; // (Hoặc mã Bin ID mới của bạn vào đây)
+    const API_KEY = "$2a$10$NP5p5TPGi4uROMTISbrxEe15.0Cc.y5YgFC/7cDkF3DaLZieV.JiK"; 
+    const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     const videoElement = document.getElementById('webcam');
     const canvasElement = document.getElementById('output_canvas');
@@ -303,14 +305,16 @@
         });
     }
 
-    // --- TÍNH NĂNG BẢNG XẾP HẠNG TOÀN CẦU QUA NPOINT.IO ---
+    // --- TÍNH NĂNG BẢNG XẾP HẠNG QUA JSONBIN.IO ---
     window.onload = loadGlobalLeaderboard;
 
     async function loadGlobalLeaderboard() {
         try {
-            let response = await fetch(NPOINT_URL);
+            let response = await fetch(JSONBIN_URL, {
+                headers: { 'X-Access-Key': API_KEY }
+            });
             let data = await response.json();
-            let leaderboard = data.leaderboard || [];
+            let leaderboard = data.record.leaderboard || [];
             let html = "";
 
             if (leaderboard.length === 0) {
@@ -344,9 +348,11 @@
         }
 
         try {
-            let response = await fetch(NPOINT_URL);
+            let response = await fetch(JSONBIN_URL, {
+                headers: { 'X-Access-Key': API_KEY }
+            });
             let data = await response.json();
-            let leaderboard = data.leaderboard || [];
+            let leaderboard = data.record.leaderboard || [];
 
             leaderboard.push({
                 name: nameInput,
@@ -357,9 +363,12 @@
             leaderboard.sort((a, b) => b.score - a.score);
             leaderboard = leaderboard.slice(0, 10);
 
-            let updateResponse = await fetch(NPOINT_URL, {
+            let updateResponse = await fetch(JSONBIN_URL, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Access-Key': API_KEY
+                },
                 body: JSON.stringify({ leaderboard: leaderboard })
             });
 
@@ -381,9 +390,12 @@
         if (password === "123456kb") { 
             if (confirm("Xác nhận xóa sạch bảng xếp hạng toàn cầu?")) {
                 try {
-                    let updateResponse = await fetch(NPOINT_URL, {
+                    let updateResponse = await fetch(JSONBIN_URL, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Access-Key': API_KEY
+                        },
                         body: JSON.stringify({ leaderboard: [] })
                     });
                     if (updateResponse.ok) {
