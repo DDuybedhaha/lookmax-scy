@@ -140,8 +140,7 @@
     </div>
 
 <script>
-    // --- THAY THÔNG TIN JSONBIN CỦA BẠN VÀO ĐÂY ---
-    const BIN_ID = "66f30419acd3cb34a88981f9"; // (Hoặc mã Bin ID mới của bạn vào đây)
+    const BIN_ID = "66f30419acd3cb34a88981f9"; 
     const API_KEY = "$2a$10$NP5p5TPGi4uROMTISbrxEe15.0Cc.y5YgFC/7cDkF3DaLZieV.JiK"; 
     const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
@@ -314,7 +313,9 @@
                 headers: { 'X-Access-Key': API_KEY }
             });
             let data = await response.json();
-            let leaderboard = data.record.leaderboard || [];
+            
+            // Phòng hờ nếu Bin trên JSONBin đang trống rỗng
+            let leaderboard = (data.record && data.record.leaderboard) ? data.record.leaderboard : [];
             let html = "";
 
             if (leaderboard.length === 0) {
@@ -348,11 +349,12 @@
         }
 
         try {
+            // Lấy dữ liệu hiện tại trước để tránh ghi đè trắng
             let response = await fetch(JSONBIN_URL, {
                 headers: { 'X-Access-Key': API_KEY }
             });
             let data = await response.json();
-            let leaderboard = data.record.leaderboard || [];
+            let leaderboard = (data.record && data.record.leaderboard) ? data.record.leaderboard : [];
 
             leaderboard.push({
                 name: nameInput,
@@ -367,6 +369,7 @@
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Master-Key': API_KEY,
                     'X-Access-Key': API_KEY
                 },
                 body: JSON.stringify({ leaderboard: leaderboard })
@@ -394,6 +397,7 @@
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-Master-Key': API_KEY,
                             'X-Access-Key': API_KEY
                         },
                         body: JSON.stringify({ leaderboard: [] })
