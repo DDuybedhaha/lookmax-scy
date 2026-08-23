@@ -363,6 +363,53 @@
             alert("Sai mật khẩu!");
         }
     }
+function saveGlobalScore() {
+        const nameInput = document.getElementById('player-name').value.trim();
+        if (!nameInput) {
+            alert("Vui lòng nhập tên của bạn!");
+            return;
+        }
+
+        const currentScore = parseFloat(document.getElementById('hud-score').innerText);
+        const currentRank = document.getElementById('hud-rank').innerText;
+        
+        if (isNaN(currentScore)) {
+            alert("Vui lòng bật AI quét mặt trước khi lưu điểm!");
+            return;
+        }
+
+        const myDeviceToken = getDeviceToken(); // Khóa định danh của máy này
+        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
+
+        // BƯỚC RENEW: Kiểm tra xem máy này đã có tên nào trên bảng xếp hạng chưa
+        let existingIndex = leaderboard.findIndex(item => item.token === myDeviceToken);
+
+        if (existingIndex !== -1) {
+            // Nếu đã có tên cũ -> Xóa hoặc thay thế hoàn toàn tên cũ bằng tên mới (Renew)
+            let oldName = leaderboard[existingIndex].name;
+            leaderboard[existingIndex].name = nameInput;       // Cập nhật tên mới
+            leaderboard[existingIndex].score = currentScore;   // Cập nhật điểm mới
+            leaderboard[existingIndex].rank = currentRank;     // Cập nhật rank mới
+            alert(`Đã renew! Đã thay thế tên cũ "${oldName}" bằng tên mới "${nameInput}" thành công! 🔄`);
+        } else {
+            // Nếu máy này chưa có ai -> Thêm mới
+            leaderboard.push({
+                token: myDeviceToken,
+                name: nameInput,
+                score: currentScore,
+                rank: currentRank
+            });
+            alert(`Đã thêm tên "${nameInput}" lên bảng xếp hạng thành công! 🎉`);
+        }
+
+        leaderboard.sort((a, b) => b.score - a.score);
+        leaderboard = leaderboard.slice(0, 10); // Giữ top 10
+
+        localStorage.setItem('psl_leaderboard', JSON.stringify(leaderboard));
+
+        document.getElementById('player-name').value = "";
+        loadLeaderboard();
+    }
 </script>
 
 <p>
