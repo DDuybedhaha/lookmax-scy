@@ -120,9 +120,9 @@
 
     <button class="btn-start" onclick="initAI()">Bắt đầu quét khuôn mặt</button>
 
-  <!-- Khung Bảng Xếp Hạng -->
+    <!-- Khung Bảng Xếp Hạng Online (Google Sheet Cloud) -->
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 340px; color: white; font-family: sans-serif; text-align: left;">
-        <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng PSL</h3>
+        <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng Cloud</h3>
         
         <div style="margin-bottom: 12px; display: flex;">
             <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15" style="padding: 8px; border-radius: 5px; border: none; width: 70%; margin-right: 5px;">
@@ -133,10 +133,6 @@
         <ul id="leaderboard-list" style="padding-left: 20px; margin: 0 0 10px 0;">
             <li>Đang tải bảng xếp hạng...</li>
         </ul>
-
-        <div style="text-align: center; margin-top: 12px;">
-            <button type="button" onclick="adminClear()" style="padding: 4px 8px; background: #222; color: #777; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">🔒 Clear Data</button>
-        </div>
     </div>
 
 <script>
@@ -153,6 +149,9 @@
     let smoothedFWHR = 1.75;
     
     const alpha = 0.12; 
+
+    // LINK API GOOGLE SHEET CỦA BẠN ĐÃ ĐƯỢC TÍCH HỢP CHUẨN XÁC:
+    const GOOGLE_API_URL = "https://script.google.com/macros/s/AKfycbwfw6w4yi6wWQFMaz7CIMGT5yUFV3PufAh9FqpyY2aS_Bc7v1fwUt0Lau8zTcSdcsgt/exec";
 
     function calculateDistance(p1, p2) {
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
@@ -300,22 +299,36 @@
         });
     }
 
-    // --- HỆ THỐNG BẢNG XẾP HẠNG LOCALSTORAGE (MƯỢT MÀ, KHÔNG CẦN KẾT NỐI NGOÀI) ---
+    // --- HỆ THỐNG BẢNG XẾP HẠNG CLOUD (GOOGLE SHEETS API) ---
+    function getDeviceToken() {
+        let token = localStorage.getItem('psl_device_token');
+        if (!token) {
+            token = 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+            localStorage.setItem('psl_device_token', token);
+        }
+        return token;
+    }
+
     window.onload = loadLeaderboard;
 
     function loadLeaderboard() {
-        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
-        let html = "";
-
-        if (leaderboard.length === 0) {
-            html = "<li>Chưa có ai lên bảng vàng.</li>";
-        } else {
-            leaderboard.sort((a, b) => b.score - a.score);
-            leaderboard.forEach((item, index) => {
-                html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #00ffcc;">${item.score}</span> (${item.rank})</li>`;
+        fetch(GOOGLE_API_URL)
+            .then(response => response.json())
+            .then(data => {
+                let html = "";
+                if (!data || data.length === 0) {
+                    html = "<li>Chưa có ai lên bảng vàng.</li>";
+                } else {
+                    data.sort((a, b) => b.score - a.score);
+                    data.slice(0, 10).forEach((item, index) => {
+                        html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #00ffcc;">${item.score}</span> (${item.rank})</li>`;
+                    });
+                }
+                document.getElementById('leaderboard-list').innerHTML = html;
+            })
+            .catch(err => {
+                document.getElementById('leaderboard-list').innerHTML = "<li>Lỗi tải bảng xếp hạng.</li>";
             });
-        }
-        document.getElementById('leaderboard-list').innerHTML = html;
     }
 
     function saveGlobalScore() {
@@ -333,82 +346,28 @@
             return;
         }
 
-        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
-
-        leaderboard.push({
+        const payload = {
+            token: getDeviceToken(),
             name: nameInput,
             score: currentScore,
             rank: currentRank
+        };
+
+        alert("Đang gửi điểm lên Cloud...");
+
+        fetch(GOOGLE_API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(`Thành công! Đã cập nhật tên "${nameInput}" lên hệ thống. 🎉`);
+            document.getElementById('player-name').value = "";
+            loadLeaderboard();
+        })
+        .catch(err => {
+            alert("Có lỗi khi lưu điểm lên Cloud!");
         });
-
-        leaderboard.sort((a, b) => b.score - a.score);
-        leaderboard = leaderboard.slice(0, 10); // Giữ top 10 cao nhất
-
-        localStorage.setItem('psl_leaderboard', JSON.stringify(leaderboard));
-
-        document.getElementById('player-name').value = "";
-        alert(`Đã lưu điểm thành công! 🎉`);
-        loadLeaderboard();
-    }
-
-    function adminClear() {
-        const password = prompt("Nhập mật khẩu Admin để xóa bảng xếp hạng:");
-        if (password === "123456kb") {
-            if (confirm("Xác nhận xóa sạch bảng xếp hạng?")) {
-                localStorage.removeItem('psl_leaderboard');
-                loadLeaderboard();
-                alert("Đã xóa sạch bảng xếp hạng!");
-            }
-        } else if (password !== null) {
-            alert("Sai mật khẩu!");
-        }
-    }
-function saveGlobalScore() {
-        const nameInput = document.getElementById('player-name').value.trim();
-        if (!nameInput) {
-            alert("Vui lòng nhập tên của bạn!");
-            return;
-        }
-
-        const currentScore = parseFloat(document.getElementById('hud-score').innerText);
-        const currentRank = document.getElementById('hud-rank').innerText;
-        
-        if (isNaN(currentScore)) {
-            alert("Vui lòng bật AI quét mặt trước khi lưu điểm!");
-            return;
-        }
-
-        const myDeviceToken = getDeviceToken(); // Khóa định danh của máy này
-        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
-
-        // BƯỚC RENEW: Kiểm tra xem máy này đã có tên nào trên bảng xếp hạng chưa
-        let existingIndex = leaderboard.findIndex(item => item.token === myDeviceToken);
-
-        if (existingIndex !== -1) {
-            // Nếu đã có tên cũ -> Xóa hoặc thay thế hoàn toàn tên cũ bằng tên mới (Renew)
-            let oldName = leaderboard[existingIndex].name;
-            leaderboard[existingIndex].name = nameInput;       // Cập nhật tên mới
-            leaderboard[existingIndex].score = currentScore;   // Cập nhật điểm mới
-            leaderboard[existingIndex].rank = currentRank;     // Cập nhật rank mới
-            alert(`Đã renew! Đã thay thế tên cũ "${oldName}" bằng tên mới "${nameInput}" thành công! 🔄`);
-        } else {
-            // Nếu máy này chưa có ai -> Thêm mới
-            leaderboard.push({
-                token: myDeviceToken,
-                name: nameInput,
-                score: currentScore,
-                rank: currentRank
-            });
-            alert(`Đã thêm tên "${nameInput}" lên bảng xếp hạng thành công! 🎉`);
-        }
-
-        leaderboard.sort((a, b) => b.score - a.score);
-        leaderboard = leaderboard.slice(0, 10); // Giữ top 10
-
-        localStorage.setItem('psl_leaderboard', JSON.stringify(leaderboard));
-
-        document.getElementById('player-name').value = "";
-        loadLeaderboard();
     }
 </script>
 
