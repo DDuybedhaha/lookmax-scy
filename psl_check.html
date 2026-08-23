@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSL Face Rating System</title>
+    <!-- Thư viện MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #0d0e12;
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 5px; color: #f4f4f4; }
+        p { color: #888; font-size: 14px; margin-bottom: 15px; }
+
+        /* Khung chứa Video & HUD lồng nhau chuẩn */
+        .display-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #222;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            background-color: #121318;
+        }
+
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        /* Bảng HUD lồng đè lên góc trái Webcam */
+        #hud-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(6px);
+            color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(245, 245, 245, 0.466);
+            font-size: 13px;
+            z-index: 10;
+            text-align: left;
+            line-height: 1.6;
+            pointer-events: none;
+        }
+
+        .btn-start {
+            margin-top: 20px;
+            padding: 12px 28px;
+            font-size: 15px;
+            background: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #000;
+            transition: 0.2s;
+        }
+        .btn-start:hover { background: #f5f5f5; }
+
+        /* Style cho nút chuyển trang (màu trắng, không gạch chân) */
+        .nut-chuyen-trang {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .nut-chuyen-trang:hover {
+            color: #fdffff;
+        }
+
+        /* NÚT LƯU: Nền trắng, chữ ĐEN rõ nét */
+        .btn-save {
+            padding: 8px 10px;
+            background: #ffffff; 
+            color: #000000;      
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 30%;
+            transition: 0.2s;
+        }
+        .btn-save:hover {
+            background: #3e3e3e; /* Rê chuột vào đổi sang xanh ngọc */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PSL and appeal to average points Face Rating</h1>
+    <p>Đánh giá tỷ lệ khuôn mặt real-time (Thuật toán cân bằng PSL)</p>
+
+    <div class="display-container">
+        <video id="webcam" playsinline></video>
+        <canvas id="output_canvas"></canvas>
+        
+        <div id="hud-overlay">
+            <div><b>OVERALL:</b> <span id="hud-score" style="color: #fff;">--</span>/10</div>
+            <div><b>POTENTIAL:</b> <span id="hud-potential" style="color: #ffaa00;">--</span>/10</div>
+            <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
+            <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
+        </div>
+    </div>
+
+    <button class="btn-start" onclick="initAI()">Bắt đầu quét khuôn mặt</button>
+
+  <!-- Khung Bảng Xếp Hạng -->
+    <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 340px; color: white; font-family: sans-serif; text-align: left;">
+        <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng PSL</h3>
+        
+        <div style="margin-bottom: 12px; display: flex;">
+            <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15" style="padding: 8px; border-radius: 5px; border: none; width: 70%; margin-right: 5px;">
+            <button type="button" onclick="saveLocalScore()" class="btn-save">Lưu</button>
+        </div>
+
+        <!-- Danh sách Top cao nhất -->
+        <ul id="leaderboard-list" style="padding-left: 20px; margin: 0 0 10px 0;">
+            <li>Chưa có dữ liệu.</li>
+        </ul>
+
+        <!-- KHU VỰC HIỂN THỊ RIÊNG THỨ HẠNG CỦA BẠN (Dù đứng ở đâu cũng thấy) -->
+        <div id="my-rank-container" style="background: #1c1d24; padding: 8px 10px; border-radius: 6px; border: 1px dashed #871ef0; font-size: 13px; display: none;">
+            📍 Bạn đang đứng thứ: <b id="my-rank-num" style="color: #ffaa00;">--</b> | Điểm: <b id="my-rank-score" style="color: #00ffcc;">--</b>
+        </div>
+
+        <div style="text-align: center; margin-top: 12px;">
+            <button type="button" onclick="adminClear()" style="padding: 4px 8px; background: #222; color: #777; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">🔒 Admin Clear</button>
+        </div>
+    </div>
+<script>
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+
+    let cameraInstance = null;
+    
+    let smoothedScore = 5.5;
+    let smoothedPsl = 5.2;
+    let smoothedAppeal = 5.8; 
+    let smoothedSym = 85.0;
+    let smoothedFWHR = 1.75;
+    
+    const alpha = 0.12; 
+
+    function calculateDistance(p1, p2) {
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    }
+
+    function getPSLRank(score) {
+        if (score >= 7.3) return "Apex / Gigachad 👑";
+        if (score >= 6.2) return "Chad / Top Model ⭐";
+        if (score >= 5.3) return "HTN (High-Tier Normal) ✨";
+        if (score >= 4.5) return "MTN (Mid-Tier Normal)";
+        if (score >= 3.8) return "LTN (Low-Tier Normal)";
+        return "Sub-five";
+    }
+
+    function onResults(results) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const lm = results.multiFaceLandmarks[0];
+
+            canvasCtx.fillStyle = '#00ffcc';
+            for (let point of lm) {
+                const x = point.x * canvasElement.width;
+                const y = point.y * canvasElement.height;
+                canvasCtx.fillRect(x, y, 1.5, 1.5);
+            }
+
+            const chin = lm[152];
+            const noseBottom = lm[2];
+            const eyebrow = lm[9];
+            const leftEye = lm[33], rightEye = lm[263];
+            const leftEyeTop = lm[159], leftEyeBottom = lm[145];
+            const rightEyeTop = lm[386], rightEyeBottom = lm[374];
+            const leftCheek = lm[234], rightCheek = lm[454];
+            const leftJaw = lm[58], rightJaw = lm[288];
+            const upperLip = lm[13];
+            const mouthLeft = lm[61], mouthRight = lm[291];
+
+            const eyeDistance = calculateDistance(leftEye, rightEye);
+            if (eyeDistance === 0) return;
+
+            const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
+            const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
+            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 1.2);
+            const currentSym = Math.min(99.9, Math.max(50.0, symmetryFactor * 100));
+
+            const midFaceHeight = calculateDistance(eyebrow, upperLip);
+            const cheekWidth = calculateDistance(leftCheek, rightCheek);
+            let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.25;
+            const currentFWHR = rawFWHR * 1.45; 
+
+            const midHeight = calculateDistance(eyebrow, noseBottom) / eyeDistance;
+            const lowHeight = calculateDistance(noseBottom, chin) / eyeDistance;
+            const thirdRatioDiff = Math.abs(midHeight - lowHeight);
+            const jawWidth = calculateDistance(leftJaw, rightJaw);
+            const jawRatio = jawWidth / cheekWidth;
+
+            let pslScore = 5.2;
+            if (currentSym >= 85) pslScore += (currentSym - 85) * 0.04;
+            if (currentFWHR >= 1.55 && currentFWHR <= 2.0) pslScore += 0.7;
+            else pslScore -= Math.abs(currentFWHR - 1.75) * 0.6;
+            if (thirdRatioDiff < 0.20) pslScore += 0.4;
+            if (jawRatio >= 0.62) pslScore += 0.4;
+            let rawPSL = Math.min(8.5, Math.max(3.5, pslScore));
+
+            let appealScore = 6.0;
+            const leftEyeHeight = calculateDistance(leftEyeTop, leftEyeBottom);
+            const rightEyeHeight = calculateDistance(rightEyeTop, rightEyeBottom);
+            const avgEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
+            const eyeAspectRatio = avgEyeHeight / eyeDistance;
+
+            if (eyeAspectRatio >= 0.18 && eyeAspectRatio <= 0.30) appealScore += 1.0;
+            
+            const mouthWidth = calculateDistance(mouthLeft, mouthRight);
+            const mouthRatio = mouthWidth / cheekWidth;
+            if (mouthRatio >= 0.40 && mouthRatio <= 0.58) appealScore += 0.8;
+
+            appealScore += (currentSym - 80) * 0.06;
+            let rawAppeal = Math.min(9.0, Math.max(4.0, appealScore));
+
+            let rawOverall = (rawPSL * 0.45) + (rawAppeal * 0.55);
+
+            smoothedScore += alpha * (rawOverall - smoothedScore);
+            smoothedPsl += alpha * (rawPSL - smoothedPsl);
+            smoothedAppeal += alpha * (rawAppeal - smoothedAppeal);
+            smoothedSym += alpha * (currentSym - smoothedSym);
+            smoothedFWHR += alpha * (currentFWHR - smoothedFWHR);
+
+            const finalOverall = smoothedScore.toFixed(1);
+            const finalPSL = smoothedPsl.toFixed(1);
+            const finalAppeal = smoothedAppeal.toFixed(1);
+            const finalSym = smoothedSym.toFixed(1);
+            const finalFWHR = smoothedFWHR.toFixed(2);
+            
+            const potentialPSL = Math.min(9.0, (parseFloat(finalOverall) + 0.7 + (100 - finalSym) * 0.01)).toFixed(1);
+            const rankName = getPSLRank(finalOverall);
+
+            document.getElementById('hud-score').innerText = finalOverall;
+            document.getElementById('hud-potential').innerText = potentialPSL;
+            document.getElementById('hud-rank').innerText = rankName;
+            document.getElementById('hud-sym').innerText = `${finalSym}%`;
+            document.getElementById('hud-fwhr').innerText = finalFWHR;
+        }
+        canvasCtx.restore();
+    }
+
+    async function initAI() {
+        canvasElement.width = 640;
+        canvasElement.height = 480;
+
+        smoothedScore = 5.5;
+        smoothedPsl = 5.2;
+        smoothedAppeal = 5.8;
+
+        if (cameraInstance !== null) {
+            try { await cameraInstance.stop(); } catch(e){}
+        }
+
+        const faceMesh = new FaceMesh({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
+
+        faceMesh.onResults(onResults);
+
+        cameraInstance = new Camera(videoElement, {
+            onFrame: async () => {
+                await faceMesh.send({ image: videoElement });
+            },
+            width: 640,
+            height: 480
+        });
+
+        cameraInstance.start().catch(err => {
+            alert("Vui lòng chạy file qua Live Server!");
+            console.error(err);
+        });
+    }
+
+    function getDeviceToken() {
+        let token = localStorage.getItem('psl_device_token');
+        if (!token) {
+            token = 'device_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+            localStorage.setItem('psl_device_token', token);
+        }
+        return token;
+    }
+
+    function loadLocalLeaderboard() {
+        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
+        let html = "";
+
+        if (leaderboard.length === 0) {
+            html = "<li>Chưa có ai lên bảng vàng.</li>";
+        } else {
+            leaderboard.forEach((item, index) => {
+                html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #00ffcc;">${item.score}</span> (${item.rank})</li>`;
+            });
+        }
+
+        document.getElementById('leaderboard-list').innerHTML = html;
+    }
+
+    function saveLocalScore() {
+        const nameInput = document.getElementById('player-name').value.trim();
+        if (!nameInput) {
+            alert("Vui lòng nhập tên của bạn!");
+            return;
+        }
+
+        const currentScore = parseFloat(document.getElementById('hud-score').innerText);
+        const currentRank = document.getElementById('hud-rank').innerText;
+        
+        if (isNaN(currentScore)) {
+            alert("Vui lòng bật AI quét mặt trước khi lưu điểm!");
+            return;
+        }
+
+        const currentDeviceToken = getDeviceToken();
+        let leaderboard = JSON.parse(localStorage.getItem('psl_leaderboard')) || [];
+
+        leaderboard = leaderboard.filter(item => item.deviceToken !== currentDeviceToken);
+
+        leaderboard.push({
+            deviceToken: currentDeviceToken,
+            name: nameInput,
+            score: currentScore,
+            rank: currentRank
+        });
+
+        leaderboard.sort((a, b) => b.score - a.score);
+        leaderboard = leaderboard.slice(0, 5);
+
+        localStorage.setItem('psl_leaderboard', JSON.stringify(leaderboard));
+
+        document.getElementById('player-name').value = "";
+        alert(`Đã cập nhật điểm thành công với tên "${nameInput}"! 🎉`);
+        loadLocalLeaderboard();
+    }
+
+    function adminClear() {
+        const password = prompt("Nhập mật khẩu Admin để xóa bảng xếp hạng:");
+        if (password === "1234") { 
+            if (confirm("Xác nhận xóa sạch bảng xếp hạng?")) {
+                localStorage.removeItem('psl_leaderboard');
+                loadLocalLeaderboard();
+                alert("Đã xóa sạch bảng xếp hạng!");
+            }
+        } else if (password !== null) {
+            alert("Sai mật khẩu!");
+        }
+    }
+
+    loadLocalLeaderboard();
+</script>
+
+<p>
+    <a href="hoc_html2.html" class="nut-chuyen-trang">    
+        -> tiếp tục thêm thông tin cho ae nhé!
+    </a>
+</p>
+<p>
+    <a href="hoc_html1.html" class="nut-chuyen-trang">    
+        -> quay lại nếu bạn gay
+    </a>
+</p>
+</body>
+</html>
