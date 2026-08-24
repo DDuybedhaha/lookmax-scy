@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Face Rating System</title>
+    <title>PSL Face Rating System - Strict Mode</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -20,7 +20,6 @@
         h1 { margin-bottom: 5px; color: #f4f4f4; }
         p { color: #888; font-size: 14px; margin-bottom: 15px; }
 
-        /* Khung chứa Video & HUD lồng nhau chuẩn */
         .display-container {
             position: relative;
             width: 640px;
@@ -43,7 +42,6 @@
             transform: scaleX(-1);
         }
 
-        /* Bảng HUD lồng đè lên góc trái Webcam */
         #hud-overlay {
             position: absolute;
             top: 12px;
@@ -88,7 +86,7 @@
         .btn-save {
             padding: 8px 10px;
             background: #ffffff; 
-            color: #000000;      
+            color: #000000;     
             border: none;
             border-radius: 5px;
             font-weight: bold;
@@ -103,16 +101,15 @@
 </head>
 <body>
 
-    <h1>PSL and appeal to average points Face Rating</h1>
-    <p>Đánh giá tỷ lệ khuôn mặt real-time (Thuật toán cân bằng PSL)</p>
+    <h1>PSL Face Rating System - Strict Mode</h1>
+    <p>Chấm điểm cấu trúc xương mặt thuần PSL (Khắt khe & Gắt gao)</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
         
         <div id="hud-overlay">
-            <div><b>OVERALL:</b> <span id="hud-score" style="color: #fff;">--</span>/10</div>
-            <div><b>POTENTIAL:</b> <span id="hud-potential" style="color: #ffaa00;">--</span>/10</div>
+            <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ff4444;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
         </div>
@@ -120,7 +117,6 @@
 
     <button class="btn-start" onclick="initAI()">Bắt đầu quét khuôn mặt</button>
 
-    <!-- Khung Bảng Xếp Hạng Online (Google Sheet Cloud) -->
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 340px; color: white; font-family: sans-serif; text-align: left;">
         <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng Cloud</h3>
         
@@ -129,7 +125,6 @@
             <button type="button" onclick="saveGlobalScore()" class="btn-save">Lưu</button>
         </div>
 
-        <!-- Danh sách Top cao nhất -->
         <ul id="leaderboard-list" style="padding-left: 20px; margin: 0 0 10px 0;">
             <li>Đang tải bảng xếp hạng...</li>
         </ul>
@@ -142,15 +137,12 @@
 
     let cameraInstance = null;
     
-    let smoothedScore = 5.5;
-    let smoothedPsl = 5.2;
-    let smoothedAppeal = 5.8; 
-    let smoothedSym = 85.0;
-    let smoothedFWHR = 1.75;
+    let smoothedScore = 4.5;
+    let smoothedSym = 80.0;
+    let smoothedFWHR = 1.70;
     
     const alpha = 0.12; 
 
-    // LINK API GOOGLE SHEET CỦA BẠN ĐÃ ĐƯỢC TÍCH HỢP CHUẨN XÁC:
     const GOOGLE_API_URL = "https://script.google.com/macros/s/AKfycbwfw6w4yi6wWQFMaz7CIMGT5yUFV3PufAh9FqpyY2aS_Bc7v1fwUt0Lau8zTcSdcsgt/exec";
 
     function calculateDistance(p1, p2) {
@@ -160,8 +152,7 @@
     function getPSLRank(score) {
         if (score >= 8.0) return "Apex / Gigachad 👑";
         if (score >= 7.0) return "Chad / Top Model ⭐";
-        if (score >= 6.5) return "Chadlite✨ ";
-        if (score >= 5.4) return "HTN (High-Tier Normal)";
+        if (score >= 5.7) return "HTN (High-Tier Normal) ✨";
         if (score >= 4.7) return "MTN (Mid-Tier Normal)";
         if (score >= 3.8) return "LTN (Low-Tier Normal)";
         return "Sub-five";
@@ -175,7 +166,7 @@
         if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
             const lm = results.multiFaceLandmarks[0];
 
-            canvasCtx.fillStyle = '#00ffcc';
+            canvasCtx.fillStyle = '#ff4444';
             for (let point of lm) {
                 const x = point.x * canvasElement.width;
                 const y = point.y * canvasElement.height;
@@ -186,74 +177,68 @@
             const noseBottom = lm[2];
             const eyebrow = lm[9];
             const leftEye = lm[33], rightEye = lm[263];
-            const leftEyeTop = lm[159], leftEyeBottom = lm[145];
-            const rightEyeTop = lm[386], rightEyeBottom = lm[374];
             const leftCheek = lm[234], rightCheek = lm[454];
             const leftJaw = lm[58], rightJaw = lm[288];
             const upperLip = lm[13];
-            const mouthLeft = lm[61], mouthRight = lm[291];
 
             const eyeDistance = calculateDistance(leftEye, rightEye);
             if (eyeDistance === 0) return;
 
+            // 1. Độ cân đối xương (Symmetry) cực kỳ khắt khe
             const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
             const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
-            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 1.2);
-            const currentSym = Math.min(99.9, Math.max(50.0, symmetryFactor * 100));
+            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 2.5); // Phạt nặng hơn nếu lệch
+            const currentSym = Math.min(99.9, Math.max(40.0, symmetryFactor * 100));
 
+            // 2. Chỉ số fWHR (Mức độ rộng ngang mặt / chiều cao mặt giữa)
             const midFaceHeight = calculateDistance(eyebrow, upperLip);
             const cheekWidth = calculateDistance(leftCheek, rightCheek);
-            let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.25;
-            const currentFWHR = rawFWHR * 1.45; 
+            let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.70;
+            const currentFWHR = rawFWHR * 1.35; 
 
+            // 3. Tỷ lệ 1/3 khuôn mặt & độ rộng xương hàm (Gonial Angle / Jaw width)
             const midHeight = calculateDistance(eyebrow, noseBottom) / eyeDistance;
             const lowHeight = calculateDistance(noseBottom, chin) / eyeDistance;
             const thirdRatioDiff = Math.abs(midHeight - lowHeight);
             const jawWidth = calculateDistance(leftJaw, rightJaw);
             const jawRatio = jawWidth / cheekWidth;
 
-            let pslScore = 5.2;
-            if (currentSym >= 85) pslScore += (currentSym - 85) * 0.04;
-            if (currentFWHR >= 1.55 && currentFWHR <= 2.0) pslScore += 0.7;
-            else pslScore -= Math.abs(currentFWHR - 1.75) * 0.6;
-            if (thirdRatioDiff < 0.20) pslScore += 0.4;
-            if (jawRatio >= 0.62) pslScore += 0.4;
-            let rawPSL = Math.min(8.5, Math.max(3.5, pslScore));
+            // --- THUẬT TOÁN PSL CHẤM ĐIỂM GẮT GAO (Bắt đầu từ mốc 4.0 trung bình thấp) ---
+            let pslScore = 4.2; 
 
-            let appealScore = 6.0;
-            const leftEyeHeight = calculateDistance(leftEyeTop, leftEyeBottom);
-            const rightEyeHeight = calculateDistance(rightEyeTop, rightEyeBottom);
-            const avgEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
-            const eyeAspectRatio = avgEyeHeight / eyeDistance;
+            // Thưởng phạt Symmetry gắt
+            if (currentSym >= 90) pslScore += (currentSym - 90) * 0.05;
+            else if (currentSym < 80) pslScore -= (80 - currentSym) * 0.08;
 
-            if (eyeAspectRatio >= 0.18 && eyeAspectRatio <= 0.30) appealScore += 1.0;
-            
-            const mouthWidth = calculateDistance(mouthLeft, mouthRight);
-            const mouthRatio = mouthWidth / cheekWidth;
-            if (mouthRatio >= 0.40 && mouthRatio <= 0.58) appealScore += 0.8;
+            // Thưởng phạt fWHR chuẩn khung xương Nam tính/Hài hòa (Lý tưởng ~1.7 - 1.9)
+            if (currentFWHR >= 1.70 && currentFWHR <= 1.95) {
+                pslScore += 0.6;
+            } else {
+                pslScore -= Math.abs(currentFWHR - 1.75) * 0.9; // Lệch chuẩn là trừ điểm sâu
+            }
 
-            appealScore += (currentSym - 80) * 0.06;
-            let rawAppeal = Math.min(9.0, Math.max(4.0, appealScore));
+            // Tỷ lệ 3 phần mặt cân đối
+            if (thirdRatioDiff < 0.12) pslScore += 0.5;
+            else pslScore -= thirdRatioDiff * 1.5;
 
-            let rawOverall = (rawPSL * 0.45) + (rawAppeal * 0.55);
+            // Xương hàm bạnh / sắc nét (Jawline)
+            if (jawRatio >= 0.70) pslScore += 0.6;
+            else if (jawRatio < 0.58) pslScore -= 0.5; // Hàm hẹp bị trừ điểm
+
+            // Khóa khung điểm nghiêm ngặt từ 2.0 đến 9.0 (Rất khó chạm mốc 8-9 nếu không phải cực phẩm)
+            let rawOverall = Math.min(9.0, Math.max(2.0, pslScore));
 
             smoothedScore += alpha * (rawOverall - smoothedScore);
-            smoothedPsl += alpha * (rawPSL - smoothedPsl);
-            smoothedAppeal += alpha * (rawAppeal - smoothedAppeal);
             smoothedSym += alpha * (currentSym - smoothedSym);
             smoothedFWHR += alpha * (currentFWHR - smoothedFWHR);
 
             const finalOverall = smoothedScore.toFixed(1);
-            const finalPSL = smoothedPsl.toFixed(1);
-            const finalAppeal = smoothedAppeal.toFixed(1);
             const finalSym = smoothedSym.toFixed(1);
             const finalFWHR = smoothedFWHR.toFixed(2);
             
-            const potentialPSL = Math.min(9.0, (parseFloat(finalOverall) + 0.7 + (100 - finalSym) * 0.01)).toFixed(1);
             const rankName = getPSLRank(finalOverall);
 
             document.getElementById('hud-score').innerText = finalOverall;
-            document.getElementById('hud-potential').innerText = potentialPSL;
             document.getElementById('hud-rank').innerText = rankName;
             document.getElementById('hud-sym').innerText = `${finalSym}%`;
             document.getElementById('hud-fwhr').innerText = finalFWHR;
@@ -265,9 +250,7 @@
         canvasElement.width = 640;
         canvasElement.height = 480;
 
-        smoothedScore = 5.5;
-        smoothedPsl = 5.2;
-        smoothedAppeal = 5.8;
+        smoothedScore = 4.5;
 
         if (cameraInstance !== null) {
             try { await cameraInstance.stop(); } catch(e){}
@@ -280,8 +263,8 @@
         faceMesh.setOptions({
             maxNumFaces: 1,
             refineLandmarks: true,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.6
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65
         });
 
         faceMesh.onResults(onResults);
@@ -300,7 +283,6 @@
         });
     }
 
-    // --- HỆ THỐNG BẢNG XẾP HẠNG CLOUD (GOOGLE SHEETS API) ---
     function getDeviceToken() {
         let token = localStorage.getItem('psl_device_token');
         if (!token) {
@@ -322,7 +304,7 @@
                 } else {
                     data.sort((a, b) => b.score - a.score);
                     data.slice(0, 10).forEach((item, index) => {
-                        html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #00ffcc;">${item.score}</span> (${item.rank})</li>`;
+                        html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #ff4444;">${item.score}</span> (${item.rank})</li>`;
                     });
                 }
                 document.getElementById('leaderboard-list').innerHTML = html;
