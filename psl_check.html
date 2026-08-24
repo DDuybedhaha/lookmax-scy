@@ -469,7 +469,6 @@
         }, intervalTime);
     }
 
-    // --- THUẬT TOÁN PSL ULTRA-STRICT (CHẤM CỰC KỲ GẮT, TRÁNH RANK ẢO) ---
     function processBalancedPSL(lm) {
         if (!lm) return;
 
@@ -479,44 +478,36 @@
         const leftCheek = lm[234], rightCheek = lm[454];
         const forehead = lm[10];
 
-        // 1. Độ đối xứng cực kỳ khắt khe (Nhân hệ số phạt độ lệch lớn)
         const leftDist = calculateDistance3D(leftEyeInner, noseTip);
         const rightDist = calculateDistance3D(rightEyeInner, noseTip);
         const symDiff = Math.abs(leftDist - rightDist) / ((leftDist + rightDist) / 2);
         let symmetryPct = Math.max(40.0, Math.min(99.0, (1 - symDiff * 8.5) * 100));
 
-        // 2. Tỷ lệ ngang mặt
         const faceWidth = calculateDistance3D(leftCheek, rightCheek);
         const eyeSpan = calculateDistance3D(leftEyeInner, rightEyeInner);
         const structRatio = faceWidth / (eyeSpan > 0 ? eyeSpan : 1);
 
-        // 3. Tỷ lệ dọc mặt
         const upperFace = calculateDistance3D(forehead, noseTip);
         const lowerFace = calculateDistance3D(noseTip, chin);
         const verticalRatio = Math.abs(upperFace - lowerFace) / ((upperFace + lowerFace) / 2);
 
-        // --- KHỞI TẠO ĐIỂM CƠ SỞ THẤP (3.6 - XUẤT PHÁT DƯỚI TRUNG BÌNH) ---
         let baseScore = 3.6;
 
-        // Phạt nặng nếu đối xứng dưới 90%
         if (symmetryPct >= 96) baseScore += 1.6;
         else if (symmetryPct >= 90) baseScore += 1.0;
         else if (symmetryPct >= 82) baseScore += 0.4;
-        else baseScore -= 0.4; // Phạt trực diện vì lệch
+        else baseScore -= 0.4;
 
-        // Đánh giá khung cấu trúc xương gò má (Hẹp/Bè đều bị trừ điểm nặng)
         if (structRatio >= 3.0 && structRatio <= 3.2) {
             baseScore += 0.8;
         } else {
             baseScore -= 0.3;
         }
 
-        // Phạt tỷ lệ dọc không cân đối
         if (verticalRatio > 0.12) {
             baseScore -= 0.5;
         }
 
-        // Giới hạn điểm trần nghiêm ngặt ở mức 6.8 (Cực kỳ khó chạm mốc Chad)
         let finalScore = Math.min(6.8, Math.max(3.2, baseScore)).toFixed(1);
 
         let dimorphStr = structRatio >= 3.0 ? "Dimorphic ⚡" : "Sub-optimal Frame 📉";
@@ -608,7 +599,8 @@
             return;
         }
 
-        const currentScore = parseFloat(document.getElementById('hud-score').innerText);
+        const scoreText = document.getElementById('hud-score').innerText;
+        const currentScore = parseFloat(scoreText);
         const currentRank = document.getElementById('hud-rank').innerText;
         
         if (isNaN(currentScore)) {
