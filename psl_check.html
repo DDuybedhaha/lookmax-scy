@@ -182,9 +182,9 @@
     </div>
 
 <script>
-    // Dùng trực tiếp URL chuẩn của bạn
+    // URL chuẩn xác mới nhất của bạn
     function getAPIUrl() { 
-        return "https://script.google.com/macros/s/AKfycbyrlA5kFiDfKRT7ppGD-nFMAQCXB-6NGcTsXGO2BsHbU3yK1hxZtlnTSE_BKQK9AYBq/exec"; 
+        return "https://script.google.com/macros/s/AKfycbxR6dqXNFoEBT5k9To5mw7UbWPF9Cx5P0x0PDgaP4ewHln4IawdTORlePsCdEUG7Lpd/exec"; 
     }
     const _cfg = { p: "MTIzNDU2a2I=" };
     function getSecretPwd() { return atob(_cfg.p); }
@@ -254,7 +254,6 @@
             const jawWidth = calculateDistance(leftJaw, rightJaw);
             const jawRatio = jawWidth / cheekWidth;
 
-            // --- CÔNG THỨC ĐÃ ĐIỀU CHỈNH DỄ THỞ HƠN ---
             let pslScore = 4.8; 
             
             if (currentSym >= 88) pslScore += (currentSym - 88) * 0.06;
@@ -271,7 +270,6 @@
 
             if (jawRatio >= 0.65) pslScore += 0.7; 
             else if (jawRatio < 0.55) pslScore -= 0.3;
-            // ----------------------------------------
 
             let rawOverall = Math.min(9.5, Math.max(2.0, pslScore));
 
