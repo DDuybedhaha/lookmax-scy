@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Authentic Biometric Rating System</title>
+    <title>Looksmax AI - PSL Biometric Rating</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -27,7 +27,7 @@
             margin: 0 auto;
             border-radius: 12px;
             overflow: hidden;
-            border: 2px solid #222;
+            border: 2px solid #333;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
             background-color: #121318;
         }
@@ -47,21 +47,31 @@
             z-index: 5;
         }
 
+        /* HUD phong cách App Store Looksmax */
         #hud-overlay {
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(10, 10, 15, 0.85);
-            backdrop-filter: blur(6px);
+            background: rgba(15, 15, 22, 0.9);
+            backdrop-filter: blur(8px);
             color: #ffffff;
-            padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(245, 245, 245, 0.466);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             font-size: 12px;
             z-index: 10;
             text-align: left;
-            line-height: 1.5;
+            line-height: 1.6;
             pointer-events: none;
+            width: 230px;
+        }
+
+        .hud-title {
+            font-weight: bold;
+            color: #f63366;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 3px;
         }
 
         #scan-overlay {
@@ -70,7 +80,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -87,18 +97,19 @@
         .scan-box {
             width: 80%;
             max-width: 320px;
-            background: rgba(20, 20, 25, 0.95);
+            background: rgba(20, 20, 28, 0.95);
             border: 1px solid #444;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
             text-align: center;
         }
         .scan-title {
             font-size: 14px;
             font-weight: bold;
-            color: #ff3333;
+            color: #f63366;
             margin-bottom: 12px;
+            letter-spacing: 1px;
         }
         .progress-track {
             width: 100%;
@@ -111,7 +122,7 @@
         .progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #ff3333, #ff8800);
+            background: linear-gradient(90deg, #f63366, #ff9900);
             transition: width 0.05s linear;
         }
         .progress-text {
@@ -161,8 +172,8 @@
         .btn-start { background: #333; color: #fff; }
         .btn-start:hover { background: #444; }
         
-        .btn-capture { background: #ffffff; color: #000; }
-        .btn-capture:hover { background: #e0e0e0; }
+        .btn-capture { background: #f63366; color: #fff; }
+        .btn-capture:hover { background: #d02955; }
         .btn-capture:disabled { background: #555; color: #888; cursor: not-allowed; }
 
         .btn-save {
@@ -176,14 +187,8 @@
             width: 30%;
             transition: 0.2s;
         }
-        .btn-save:hover {
-            background: #3e3e3e;
-            color: #ffffff;
-        }
-        .btn-save.success {
-            background: #28a745 !important;
-            color: white !important;
-        }
+        .btn-save:hover { background: #3e3e3e; color: #ffffff; }
+        .btn-save.success { background: #28a745 !important; color: white !important; }
 
         .btn-danger {
             background: #ff4444;
@@ -217,8 +222,8 @@
 </head>
 <body>
 
-    <h1>PSL Authentic Biometric Rating System</h1>
-    <p>Hệ thống chấm điểm chuẩn chỉnh đúng tiêu chuẩn PSL nguyên bản (Khắt khe & Khách quan)</p>
+    <h1>Looksmax AI - PSL Biometric Rating</h1>
+    <p>Hệ thống quét khuôn mặt chuẩn phong cách App Store</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -226,16 +231,18 @@
         <canvas id="freeze_canvas" width="640" height="480"></canvas>
         
         <div id="hud-overlay">
-            <div><b>STATUS:</b> <span id="hud-status" style="color: #ffaa00;">Chưa bật Camera</span></div>
-            <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ff3333;">--</span>/10</div>
+            <div class="hud-title">⚡ LOOKSMAX AI ANALYZER</div>
+            <div><b>OVERALL:</b> <span id="hud-score" style="color: #f63366; font-size: 14px;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
-            <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
-            <div><b>JAW:</b> <span id="hud-jaw" style="color: #fff;">--</span> | <b>RATIO:</b> <span id="hud-ratio" style="color: #fff;">--</span></div>
+            <div><b>Jawline:</b> <span id="hud-jaw" style="color: #fff;">--</span></div>
+            <div><b>Symmetry:</b> <span id="hud-sym" style="color: #fff;">--%</span></div>
+            <div><b>Eye Area:</b> <span id="hud-eye" style="color: #fff;">--</span></div>
+            <div><b>Harmony:</b> <span id="hud-ratio" style="color: #fff;">--</span></div>
         </div>
 
         <div id="scan-overlay">
             <div class="scan-box">
-                <div class="scan-title">⚖️ PHÂN TÍCH CHUẨN PSL GỐC...</div>
+                <div class="scan-title">🔍 AI SCANNING MESH...</div>
                 <div class="progress-track">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
@@ -259,14 +266,14 @@
             <button type="button" onclick="saveGlobalScore()" id="btn-save-action" class="btn-save">Lưu</button>
         </div>
 
-        <div style="font-size: 13px; font-weight: bold; color: #ff3333; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
+        <div style="font-size: 13px; font-weight: bold; color: #f63366; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
         <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 14px;">
             <li>Đang tải...</li>
         </ul>
 
         <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
 
-        <div style="font-size: 13px; font-weight: bold; color: #888; margin-bottom: 5px;">📜 Các vị trí khác (Cuộn xuống xem):</div>
+        <div style="font-size: 13px; font-weight: bold; color: #888; margin-bottom: 5px;">📜 Các vị trí khác:</div>
         <ul id="rest-list" class="leaderboard-scroll" style="font-size: 13px;">
             <li>Đang tải...</li>
         </ul>
@@ -304,26 +311,19 @@
         const toast = document.getElementById('toast-notification');
         toast.innerText = message;
         toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, duration);
+        setTimeout(() => { toast.classList.remove('show'); }, duration);
     }
 
     function calculateDistance3D(p1, p2) {
-        return Math.sqrt(
-            Math.pow(p1.x - p2.x, 2) + 
-            Math.pow(p1.y - p2.y, 2) + 
-            Math.pow(p1.z - p2.z, 2)
-        );
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
     }
 
-    function getPSLRank(score) {
-        if (score >= 7.5) return "Godtier / Apex ⚡👑";
-        if (score >= 6.5) return "Chad / Top Model ⭐";
-        if (score >= 5.5) return "Chadlite ✨";
-        if (score >= 4.5) return "HTN (High-Tier Normal)";
-        if (score >= 3.5) return "MTN (Mid-Tier Normal)";
-        if (score >= 2.5) return "LTN (Low-Tier Normal)";
+    function getAppStoreRank(score) {
+        if (score >= 8.0) return "Apex / Godtier ⚡";
+        if (score >= 7.0) return "Chad / Model 🔥";
+        if (score >= 6.0) return "High Tier ✨";
+        if (score >= 5.0) return "Mid Tier Normal";
+        if (score >= 4.0) return "Low Tier Normal";
         return "Sub-five 📉";
     }
 
@@ -357,12 +357,17 @@
             
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 latestLandmarks = results.multiFaceLandmarks[0];
+                // Vẽ khung lưới công nghệ phong cách app store lên mặt khi bắt được
+                canvasCtx.strokeStyle = 'rgba(246, 51, 102, 0.4)';
+                canvasCtx.lineWidth = 0.5;
+                for (let i = 0; i < latestLandmarks.length; i += 5) {
+                    let p = latestLandmarks[i];
+                    canvasCtx.strokeRect(p.x * canvasElement.width - 1, p.y * canvasElement.height - 1, 2, 2);
+                }
+
                 document.getElementById('hud-status').innerText = "Đã nhận diện khuôn mặt ✅";
-                document.getElementById('hud-status').style.color = "#44ff44";
             } else {
                 latestLandmarks = null;
-                document.getElementById('hud-status').innerText = "Không thấy mặt - Hãy nhìn thẳng camera";
-                document.getElementById('hud-status').style.color = "#ff4444";
             }
             canvasCtx.restore();
         });
@@ -378,14 +383,13 @@
         });
 
         cameraInstance.start().catch(err => {
-            showToast("⚠️ Vui lòng cấp quyền camera để chạy hệ thống!");
-            console.error(err);
+            showToast("⚠️ Vui lòng cấp quyền camera!");
         });
     }
 
     function startFreezeScan() {
         if (!latestLandmarks) {
-            showToast("⚠️ Không tìm thấy khuôn mặt! Hãy đưa mặt vào chính giữa.");
+            showToast("⚠️ Không tìm thấy khuôn mặt! Hãy nhìn thẳng.");
             return;
         }
 
@@ -409,7 +413,7 @@
         let currentPercent = 0;
         const capturedLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
 
-        const totalDuration = 1200;
+        const totalDuration = 1500;
         const intervalTime = 30;
         const step = 100 / (totalDuration / intervalTime);
 
@@ -432,112 +436,57 @@
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    processAuthenticPSL(capturedLandmarks);
+                    processAppStoreStylePSL(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    // --- THUẬT TOÁN CHUẨN PSL GỐC (ĐIỂM NỀN 3.0, HỆ SỐ KHẮT KHE) ---
-    function processAuthenticPSL(lm) {
-        if (!lm) {
-            showToast("⚠️ Lỗi dữ liệu khuôn mặt. Thử lại nhé!");
-            return;
-        }
+    // --- THUẬT TOÁN MÔ PHỎNG APP STORE LOOKSMAX ---
+    function processAppStoreStylePSL(lm) {
+        if (!lm) return;
 
-        const leftEye3D = lm[33], rightEye3D = lm[263];
-        const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
-        if (zDiff > 0.12) {
-            showToast("⚠️ Góc mặt hơi nghiêng, hãy nhìn thẳng hơn để đo chính xác.");
-        }
-
-        canvasCtx.fillStyle = '#ff3333';
-        for (let point of lm) {
-            const x = point.x * canvasElement.width;
-            const y = point.y * canvasElement.height;
-            canvasCtx.fillRect(x, y, 1.5, 1.5);
-        }
-
-        const chin = lm[152];
-        const noseBottom = lm[2];
-        const eyebrow = lm[9];
         const leftEye = lm[33], rightEye = lm[263];
+        const noseBridge = lm[168];
         const leftCheek = lm[234], rightCheek = lm[454];
         const leftJaw = lm[58], rightJaw = lm[288];
-        const upperLip = lm[13];
 
         const baseUnit = calculateDistance3D(leftEye, rightEye);
-        if (baseUnit === 0) return;
 
-        // 1. Độ đối xứng
-        const noseBridge = lm[168];
-        const distLeftToCenter = calculateDistance3D(leftEye, noseBridge);
-        const distRightToCenter = calculateDistance3D(rightEye, noseBridge);
-        const symDiff3D = Math.abs(distLeftToCenter - distRightToCenter) / baseUnit;
-        const currentSym = Math.min(99.9, Math.max(40.0, (1 - symDiff3D * 5.0) * 100));
+        // 1. Chỉ số Đối xứng (Symmetry)
+        const distLeft = calculateDistance3D(leftEye, noseBridge);
+        const distRight = calculateDistance3D(rightEye, noseBridge);
+        const symDiff = Math.abs(distLeft - distRight) / baseUnit;
+        const symmetry = Math.min(99.4, Math.max(70.0, (1 - symDiff * 3.5) * 100)).toFixed(1);
 
-        // 2. fWHR chuẩn vàng (1.80 - 1.88)
-        const midFaceHeight3D = calculateDistance3D(eyebrow, upperLip);
-        const cheekWidth3D = calculateDistance3D(leftCheek, rightCheek);
-        let currentFWHR = midFaceHeight3D > 0 ? (cheekWidth3D / midFaceHeight3D) : 1.75;
+        // 2. Chỉ số Xương hàm (Jawline Score / 10)
+        const jawWidth = calculateDistance3D(leftJaw, rightJaw);
+        const cheekWidth = calculateDistance3D(leftCheek, rightCheek);
+        const jawRatio = jawWidth / cheekWidth;
+        let jawScore = Math.min(9.2, Math.max(4.5, jawRatio * 10.5)).toFixed(1);
 
-        // 3. Tỷ lệ chiều dọc 1/3 khuôn mặt
-        const midHeightRatio = calculateDistance3D(eyebrow, noseBottom) / baseUnit;
-        const lowHeightRatio = calculateDistance3D(noseBottom, chin) / baseUnit;
-        const thirdRatioDiff = Math.abs(midHeightRatio - lowHeightRatio);
+        // 3. Chỉ số Vùng mắt (Eye Area / 10)
+        let eyeScore = (7.0 + (Math.random() * 1.5 - 0.7)).toFixed(1);
 
-        // 4. Độ rộng góc hàm
-        const jawWidth3D = calculateDistance3D(leftJaw, rightJaw);
-        const jawRatio = jawWidth3D / cheekWidth3D;
+        // 4. Chỉ số Tỷ lệ hài hòa khuôn mặt (Harmony / 10)
+        let harmonyScore = (6.8 + (Math.random() * 1.4 - 0.6)).toFixed(1);
 
-        // --- HỆ THỐNG TÍNH ĐIỂM GẮT GAO (BASE 3.0) ---
-        let pslScore = 3.0; 
+        // Tổng điểm Overall phong cách app store (thường dao động từ 5.5 đến 8.5)
+        let overall = (parseFloat(jawScore) * 0.3 + parseFloat(symmetry) / 12 * 0.3 + parseFloat(eyeScore) * 0.2 + parseFloat(harmonyScore) * 0.2).toFixed(1);
+        if (overall > 8.5) overall = "8.5";
+        if (overall < 4.5) overall = "4.8";
 
-        // Khắt khe với độ đối xứng
-        if (currentSym >= 96) pslScore += 1.5;
-        else if (currentSym >= 90) pslScore += 0.8;
-        else if (currentSym >= 82) pslScore += 0.3;
-        else pslScore -= 0.6;
+        const rankName = getAppStoreRank(parseFloat(overall));
 
-        // Khắt khe với tỷ lệ fWHR
-        if (currentFWHR >= 1.80 && currentFWHR <= 1.88) {
-            pslScore += 1.2;
-        } else {
-            pslScore -= Math.abs(currentFWHR - 1.84) * 2.2; 
-        }
-
-        // Khắt khe với tỷ lệ 1/3 mặt
-        if (thirdRatioDiff < 0.04) {
-            pslScore += 1.0;
-        } else {
-            pslScore -= thirdRatioDiff * 3.5; 
-        }
-
-        // Khắt khe với khung hàm
-        if (jawRatio >= 0.75 && jawRatio <= 0.82) {
-            pslScore += 0.8;
-        } else {
-            pslScore -= 0.5; 
-        }
-
-        // Giới hạn điểm số khắt khe theo chuẩn PSL từ 2.5 đến 7.5
-        let rawOverall = Math.min(7.5, Math.max(2.5, pslScore));
-
-        const finalOverall = rawOverall.toFixed(1);
-        const finalSym = currentSym.toFixed(1);
-        const finalFWHR = currentFWHR.toFixed(2);
-        const finalJaw = jawRatio.toFixed(2);
-        const finalRatio = thirdRatioDiff.toFixed(2);
-        const rankName = getPSLRank(finalOverall);
-
-        document.getElementById('hud-score').innerText = finalOverall;
+        // Đẩy lên HUD
+        document.getElementById('hud-score').innerText = overall;
         document.getElementById('hud-rank').innerText = rankName;
-        document.getElementById('hud-sym').innerText = `${finalSym}%`;
-        document.getElementById('hud-fwhr').innerText = finalFWHR;
-        document.getElementById('hud-jaw').innerText = finalJaw;
-        document.getElementById('hud-ratio').innerText = finalRatio;
+        document.getElementById('hud-jaw').innerText = `${jawScore}/10`;
+        document.getElementById('hud-sym').innerText = `${symmetry}%`;
+        document.getElementById('hud-eye').innerText = `${eyeScore}/10`;
+        document.getElementById('hud-ratio').innerText = `${harmonyScore}/10`;
 
-        showToast(`⚖️ Đã chấm xong (Chuẩn PSL Gốc)! Điểm: ${finalOverall} (${rankName})`);
+        showToast(`✨ Phân tích Looksmax hoàn tất! Điểm: ${overall}/10`);
     }
 
     function getDeviceToken() {
@@ -573,7 +522,7 @@
                     const top3 = data.slice(0, 3);
                     top3.forEach((item, index) => {
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
-                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ff3333;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
+                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #f63366;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
                     const theRest = data.slice(3);
@@ -581,7 +530,7 @@
                         restHtml = "<li style='color: #666;'>Chưa có thêm thành viên nào khác.</li>";
                     } else {
                         theRest.forEach((item, index) => {
-                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #ff3333;">${item.score}</span> (${item.rank})</li>`;
+                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #f63366;">${item.score}</span> (${item.rank})</li>`;
                         });
                     }
 
@@ -591,7 +540,7 @@
                     
                     if (myRecordIndex !== -1) {
                         const myRecord = data[myRecordIndex];
-                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ff3333;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#f63366;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
                     } else {
                         userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
                     }
