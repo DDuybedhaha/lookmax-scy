@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Face Rating System - Strict Mode</title>
+    <title>PSL Face Rating System - Snapshot Mode</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -59,29 +59,27 @@
             pointer-events: none;
         }
 
-        .btn-start {
-            margin-top: 20px;
-            padding: 12px 28px;
+        .controls-row {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-action {
+            padding: 12px 24px;
             font-size: 15px;
-            background: #ffffff;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            color: #000;
             transition: 0.2s;
         }
-        .btn-start:hover { background: #f5f5f5; }
-
-        .nut-chuyen-trang {
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: 0.2s;
-        }
-        .nut-chuyen-trang:hover {
-            color: #fdffff;
-        }
+        .btn-start { background: #333; color: #fff; }
+        .btn-start:hover { background: #444; }
+        
+        .btn-capture { background: #ffffff; color: #000; }
+        .btn-capture:hover { background: #e0e0e0; }
 
         .btn-save {
             padding: 8px 10px;
@@ -111,9 +109,7 @@
             transition: 0.2s;
             margin-top: 10px;
         }
-        .btn-danger:hover {
-            background: #cc0000;
-        }
+        .btn-danger:hover { background: #cc0000; }
 
         .leaderboard-scroll {
             max-height: 150px;
@@ -124,9 +120,7 @@
             scrollbar-width: thin;
             scrollbar-color: #555 #111;
         }
-        .leaderboard-scroll::-webkit-scrollbar {
-            width: 6px;
-        }
+        .leaderboard-scroll::-webkit-scrollbar { width: 6px; }
         .leaderboard-scroll::-webkit-scrollbar-thumb {
             background-color: #555;
             border-radius: 3px;
@@ -135,8 +129,8 @@
 </head>
 <body>
 
-    <h1>PSL Face Rating System - Strict Mode</h1>
-    <p>Chấm điểm cấu trúc xương mặt thuần PSL (Chuẩn mực nghiêm khắc)</p>
+    <h1>PSL Face Rating System - Snapshot Mode</h1>
+    <p>Chấm điểm cấu trúc xương mặt thuần PSL - Nhấn "Chụp ảnh quét mặt" khi đã chuẩn bị xong</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -149,7 +143,10 @@
         </div>
     </div>
 
-    <button class="btn-start" onclick="initAI()">Bắt đầu quét khuôn mặt</button>
+    <div class="controls-row">
+        <button class="btn-action btn-start" onclick="initCamera()">1. Bật Camera</button>
+        <button class="btn-action btn-capture" onclick="captureAndAnalyze()">📸 2. Chụp & Chấm Điểm</button>
+    </div>
 
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 360px; color: white; font-family: sans-serif; text-align: left;">
         <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng Cloud</h3>
@@ -194,10 +191,8 @@
     const canvasCtx = canvasElement.getContext('2d');
 
     let cameraInstance = null;
-    let smoothedScore = 5.0;
-    let smoothedSym = 85.0;
-    let smoothedFWHR = 1.75;
-    const alpha = 0.12; 
+    let faceMesh = null;
+    let latestLandmarks = null; // Lưu trữ khung xương mặt gần nhất khi chụp
 
     function calculateDistance(p1, p2) {
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
@@ -213,95 +208,16 @@
         return "Sub-five";
     }
 
-    function onResults(results) {
-        canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-            const lm = results.multiFaceLandmarks[0];
-
-            canvasCtx.fillStyle = '#ff4444';
-            for (let point of lm) {
-                const x = point.x * canvasElement.width;
-                const y = point.y * canvasElement.height;
-                canvasCtx.fillRect(x, y, 1.5, 1.5);
-            }
-
-            const chin = lm[152];
-            const noseBottom = lm[2];
-            const eyebrow = lm[9];
-            const leftEye = lm[33], rightEye = lm[263];
-            const leftCheek = lm[234], rightCheek = lm[454];
-            const leftJaw = lm[58], rightJaw = lm[288];
-            const upperLip = lm[13];
-
-            const eyeDistance = calculateDistance(leftEye, rightEye);
-            if (eyeDistance === 0) return;
-
-            const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
-            const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
-            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 3.0);
-            const currentSym = Math.min(99.9, Math.max(30.0, symmetryFactor * 100));
-
-            const midFaceHeight = calculateDistance(eyebrow, upperLip);
-            const cheekWidth = calculateDistance(leftCheek, rightCheek);
-            let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.70;
-            const currentFWHR = rawFWHR * 1.35; 
-
-            const midHeight = calculateDistance(eyebrow, noseBottom) / eyeDistance;
-            const lowHeight = calculateDistance(noseBottom, chin) / eyeDistance;
-            const thirdRatioDiff = Math.abs(midHeight - lowHeight);
-            const jawWidth = calculateDistance(leftJaw, rightJaw);
-            const jawRatio = jawWidth / cheekWidth;
-
-            let pslScore = 4.2; 
-            
-            if (currentSym >= 90) pslScore += (currentSym - 90) * 0.04;
-            else if (currentSym < 80) pslScore -= (80 - currentSym) * 0.08;
-
-            if (currentFWHR >= 1.70 && currentFWHR <= 1.95) {
-                pslScore += 0.5; 
-            } else {
-                pslScore -= Math.abs(currentFWHR - 1.75) * 0.9;
-            }
-
-            if (thirdRatioDiff < 0.12) pslScore += 0.4; 
-            else pslScore -= thirdRatioDiff * 1.5;
-
-            if (jawRatio >= 0.68) pslScore += 0.5; 
-            else if (jawRatio < 0.58) pslScore -= 0.5;
-
-            let rawOverall = Math.min(9.5, Math.max(1.5, pslScore));
-
-            smoothedScore += alpha * (rawOverall - smoothedScore);
-            smoothedSym += alpha * (currentSym - smoothedSym);
-            smoothedFWHR += alpha * (currentFWHR - smoothedFWHR);
-
-            const finalOverall = smoothedScore.toFixed(1);
-            const finalSym = smoothedSym.toFixed(1);
-            const finalFWHR = smoothedFWHR.toFixed(2);
-            
-            const rankName = getPSLRank(finalOverall);
-
-            document.getElementById('hud-score').innerText = finalOverall;
-            document.getElementById('hud-rank').innerText = rankName;
-            document.getElementById('hud-sym').innerText = `${finalSym}%`;
-            document.getElementById('hud-fwhr').innerText = finalFWHR;
-        }
-        canvasCtx.restore();
-    }
-
-    async function initAI() {
+    // Khởi tạo camera và model nền để lấy dữ liệu realtime nhưng KHÔNG ép render điểm liên tục
+    async function initCamera() {
         canvasElement.width = 640;
         canvasElement.height = 480;
-        smoothedScore = 5.0;
 
         if (cameraInstance !== null) {
             try { await cameraInstance.stop(); } catch(e){}
         }
 
-        const faceMesh = new FaceMesh({
+        faceMesh = new FaceMesh({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
         });
 
@@ -312,11 +228,25 @@
             minTrackingConfidence: 0.65
         });
 
-        faceMesh.onResults(onResults);
+        // Chỉ lưu trữ landmarks ngầm qua mỗi khung hình
+        faceMesh.onResults((results) => {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                latestLandmarks = results.multiFaceLandmarks[0];
+            } else {
+                latestLandmarks = null;
+            }
+            canvasCtx.restore();
+        });
 
         cameraInstance = new Camera(videoElement, {
             onFrame: async () => {
-                await faceMesh.send({ image: videoElement });
+                if (faceMesh) {
+                    await faceMesh.send({ image: videoElement });
+                }
             },
             width: 640,
             height: 480
@@ -326,6 +256,82 @@
             alert("Vui lòng cấp quyền camera để chạy hệ thống!");
             console.error(err);
         });
+    }
+
+    // Nút bấm "Chụp & Chấm Điểm" thực hiện phân tích chính thức từ frame hiện tại
+    function captureAndAnalyze() {
+        if (!latestLandmarks) {
+            alert("Không tìm thấy khuôn mặt trong khung hình! Hãy căn chỉnh lại camera.");
+            return;
+        }
+
+        const lm = latestLandmarks;
+
+        // Vẽ hiệu ứng chấm điểm lên canvas
+        canvasCtx.fillStyle = '#ff4444';
+        for (let point of lm) {
+            const x = point.x * canvasElement.width;
+            const y = point.y * canvasElement.height;
+            canvasCtx.fillRect(x, y, 1.5, 1.5);
+        }
+
+        const chin = lm[152];
+        const noseBottom = lm[2];
+        const eyebrow = lm[9];
+        const leftEye = lm[33], rightEye = lm[263];
+        const leftCheek = lm[234], rightCheek = lm[454];
+        const leftJaw = lm[58], rightJaw = lm[288];
+        const upperLip = lm[13];
+
+        const eyeDistance = calculateDistance(leftEye, rightEye);
+        if (eyeDistance === 0) return;
+
+        const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
+        const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
+        const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 3.0);
+        const currentSym = Math.min(99.9, Math.max(30.0, symmetryFactor * 100));
+
+        const midFaceHeight = calculateDistance(eyebrow, upperLip);
+        const cheekWidth = calculateDistance(leftCheek, rightCheek);
+        let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.70;
+        const currentFWHR = rawFWHR * 1.35; 
+
+        const midHeight = calculateDistance(eyebrow, noseBottom) / eyeDistance;
+        const lowHeight = calculateDistance(noseBottom, chin) / eyeDistance;
+        const thirdRatioDiff = Math.abs(midHeight - lowHeight);
+        const jawWidth = calculateDistance(leftJaw, rightJaw);
+        const jawRatio = jawWidth / cheekWidth;
+
+        let pslScore = 4.2; 
+        
+        if (currentSym >= 90) pslScore += (currentSym - 90) * 0.04;
+        else if (currentSym < 80) pslScore -= (80 - currentSym) * 0.08;
+
+        if (currentFWHR >= 1.70 && currentFWHR <= 1.95) {
+            pslScore += 0.5; 
+        } else {
+            pslScore -= Math.abs(currentFWHR - 1.75) * 0.9;
+        }
+
+        if (thirdRatioDiff < 0.12) pslScore += 0.4; 
+        else pslScore -= thirdRatioDiff * 1.5;
+
+        if (jawRatio >= 0.68) pslScore += 0.5; 
+        else if (jawRatio < 0.58) pslScore -= 0.5;
+
+        let rawOverall = Math.min(9.5, Math.max(1.5, pslScore));
+
+        const finalOverall = rawOverall.toFixed(1);
+        const finalSym = currentSym.toFixed(1);
+        const finalFWHR = currentFWHR.toFixed(2);
+        const rankName = getPSLRank(finalOverall);
+
+        document.getElementById('hud-score').innerText = finalOverall;
+        document.getElementById('hud-rank').innerText = rankName;
+        document.getElementById('hud-sym').innerText = `${finalSym}%`;
+        document.getElementById('hud-fwhr').innerText = finalFWHR;
+
+        alert(`Chụp thành công! Điểm PSL của bạn là: ${finalOverall} (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -399,7 +405,7 @@
         const currentRank = document.getElementById('hud-rank').innerText;
         
         if (isNaN(currentScore)) {
-            alert("Vui lòng bật AI quét mặt trước khi lưu điểm!");
+            alert("Vui lòng chụp ảnh quét mặt trước khi lưu điểm!");
             return;
         }
 
