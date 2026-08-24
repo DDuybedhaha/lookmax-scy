@@ -182,9 +182,9 @@
     </div>
 
 <script>
-    // Link API và Mật khẩu được mã hóa ẩn tránh bị lộ trên GitHub
+    // Link API và Mật khẩu đã được mã hóa chính xác
     const _cfg = {
-        u: "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3NzL3MvQUtmeWNiekJTMF9rYjFyaTJ4TlBSa3VwOXV5MldQSlNLVjNrcmdFc3NObGVjTENQOUZsYVZaSHpyTnRBOXlYZEtWNG4vZXhlYw==",
+        u: "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3NzL3MvQUtmeWNiekpTMF9rYjFyaTJ4TlBSa3VwOXV5MldQSlNLVjNrcmdFc3NObGVjTENQOUZsYVZaSHpyTnRBOXlYZEtWNG4vZXhlYw==",
         p: "MTIzNDU2a2I="
     };
     function getAPIUrl() { return atob(_cfg.u).replace('/macross/', '/macros/'); }
@@ -255,28 +255,24 @@
             const jawWidth = calculateDistance(leftJaw, rightJaw);
             const jawRatio = jawWidth / cheekWidth;
 
-            // --- ĐÃ ĐIỀU CHỈNH CÔNG THỨC DỄ THỞ HƠN KHOẢNG +1 ĐIỂM ---
-            let pslScore = 4.8; // Điểm nền khởi đầu cao hơn (cũ là 4.2)
+            // --- CÔNG THỨC ĐÃ ĐIỀU CHỈNH DỄ THỞ HƠN ---
+            let pslScore = 4.8; 
             
-            // Nới lỏng độ đối xứng (bớt khắt khe khi lệch nhẹ)
             if (currentSym >= 88) pslScore += (currentSym - 88) * 0.06;
             else if (currentSym < 75) pslScore -= (75 - currentSym) * 0.05;
 
-            // Nới lỏng fWHR (dễ đạt điểm thưởng hơn)
             if (currentFWHR >= 1.65 && currentFWHR <= 2.00) {
                 pslScore += 0.8; 
             } else {
                 pslScore -= Math.abs(currentFWHR - 1.75) * 0.6; 
             }
 
-            // Tỷ lệ 3 phần mặt (nới biên độ từ 0.12 lên 0.15)
             if (thirdRatioDiff < 0.15) pslScore += 0.6; 
             else pslScore -= thirdRatioDiff * 1.0; 
 
-            // Tỷ lệ hàm (giảm mốc điều kiện xuống 0.65 để dễ đạt)
             if (jawRatio >= 0.65) pslScore += 0.7; 
             else if (jawRatio < 0.55) pslScore -= 0.3;
-            // --------------------------------------------------------
+            // ----------------------------------------
 
             let rawOverall = Math.min(9.5, Math.max(2.0, pslScore));
 
