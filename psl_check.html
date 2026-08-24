@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PSL Authentic Biometric Rating System</title>
-    <!-- Thư viện MediaPipe -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <!-- Thư viện MediaPipe Face Mesh (Bỏ camera_utils để chống đơ cam) -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
         * { box-sizing: border-box; }
@@ -315,10 +314,12 @@
     const freezeCanvas = document.getElementById('freeze_canvas');
     const freezeCtx = freezeCanvas.getContext('2d');
 
-    let cameraInstance = null;
     let faceMesh = null;
     let latestLandmarks = null; 
     let isScanning = false;
+    let videoStream = null;
+    let lastVideoTime = -1;
+    window.isCameraStopped = false;
 
     function showToast(message, duration = 3000) {
         const toast = document.getElementById('toast-notification');
@@ -345,56 +346,73 @@
         canvasElement.height = 480;
         freezeCanvas.width = 640;
         freezeCanvas.height = 480;
+        window.isCameraStopped = false;
 
-        if (cameraInstance !== null) {
-            try { await cameraInstance.stop(); } catch(e){}
+        // Dừng luồng cũ nếu đang chạy để tránh xung đột
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
         }
 
-        faceMesh = new FaceMesh({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-        });
+        if (!faceMesh) {
+            faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
 
-        faceMesh.setOptions({
-            maxNumFaces: 1,
-            refineLandmarks: true,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.6
-        });
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
+            });
 
-        faceMesh.onResults((results) => {
-            if (isScanning) return;
+            faceMesh.onResults((results) => {
+                if (isScanning) return;
 
-            canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            
-            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                latestLandmarks = results.multiFaceLandmarks[0];
-                canvasCtx.strokeStyle = 'rgba(246, 51, 102, 0.4)';
-                canvasCtx.lineWidth = 0.5;
-                for (let i = 0; i < latestLandmarks.length; i += 5) {
-                    let p = latestLandmarks[i];
-                    canvasCtx.strokeRect(p.x * canvasElement.width - 1, p.y * canvasElement.height - 1, 2, 2);
+                canvasCtx.save();
+                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+                
+                if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                    latestLandmarks = results.multiFaceLandmarks[0];
+                    canvasCtx.strokeStyle = 'rgba(246, 51, 102, 0.4)';
+                    canvasCtx.lineWidth = 0.5;
+                    for (let i = 0; i < latestLandmarks.length; i += 5) {
+                        let p = latestLandmarks[i];
+                        canvasCtx.strokeRect(p.x * canvasElement.width - 1, p.y * canvasElement.height - 1, 2, 2);
+                    }
+                } else {
+                    latestLandmarks = null;
                 }
-            } else {
-                latestLandmarks = null;
+                canvasCtx.restore();
+            });
+        }
+
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+                audio: false
+            });
+            videoElement.srcObject = videoStream;
+            await videoElement.play();
+
+            predictWebcam();
+            showToast("📷 Đã bật camera thành công mượt mà!");
+        } catch (err) {
+            console.error(err);
+            showToast("⚠️ Vui lòng cấp quyền camera trình duyệt!");
+        }
+    }
+
+    async function predictWebcam() {
+        if (window.isCameraStopped) return;
+
+        if (videoElement.readyState >= 2 && !isScanning) {
+            if (videoElement.currentTime !== lastVideoTime) {
+                lastVideoTime = videoElement.currentTime;
+                await faceMesh.send({ image: videoElement });
             }
-            canvasCtx.restore();
-        });
-
-        cameraInstance = new Camera(videoElement, {
-            onFrame: async () => {
-                if (faceMesh && !isScanning) {
-                    await faceMesh.send({ image: videoElement });
-                }
-            },
-            width: 640,
-            height: 480
-        });
-
-        cameraInstance.start().catch(err => {
-            showToast("⚠️ Vui lòng cấp quyền camera!");
-        });
+        }
+        requestAnimationFrame(predictWebcam);
     }
 
     function startFreezeScan() {
@@ -456,7 +474,6 @@
     function processAdvancedPSL(lm) {
         if (!lm) return;
 
-        // Các điểm mốc quan trọng chuẩn FaceMesh
         const leftEyeInner = lm[133], leftEyeOuter = lm[33];
         const rightEyeInner = lm[362], rightEyeOuter = lm[263];
         const leftJaw = lm[58], rightJaw = lm[288];
@@ -473,7 +490,6 @@
         const jawWidth = calculateDistance3D(leftJaw, rightJaw);
         const interEyeDist = calculateDistance3D(leftEyeInner, rightEyeInner);
         const jawRatio = jawWidth / interEyeDist;
-        // Mô phỏng góc hàm dựa trên tỷ lệ xương hàm
         let estimatedGonialAngle = Math.round(135 - (jawRatio - 1.6) * 25);
         if (estimatedGonialAngle < 110) estimatedGonialAngle = 110;
         if (estimatedGonialAngle > 132) estimatedGonialAngle = 132;
