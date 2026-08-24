@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Face Rating System - Scale Independent</title>
+    <title>PSL Face Rating System - Advanced Scan Mode</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -59,7 +59,64 @@
             pointer-events: none;
         }
 
-        /* Toast thông báo nổi thay thế alert */
+        /* --- THANH LOADING QUÉT 0-100% --- */
+        #scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #scan-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .scan-box {
+            width: 80%;
+            max-width: 320px;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid #444;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+        .scan-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffaa00;
+            margin-bottom: 12px;
+        }
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #222;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+            transition: width 0.05s linear;
+        }
+        .progress-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* Toast thông báo nổi */
         #toast-notification {
             position: fixed;
             bottom: 20px;
@@ -103,6 +160,7 @@
         
         .btn-capture { background: #ffffff; color: #000; }
         .btn-capture:hover { background: #e0e0e0; }
+        .btn-capture:disabled { background: #555; color: #888; cursor: not-allowed; }
 
         .btn-save {
             padding: 8px 10px;
@@ -156,27 +214,39 @@
 </head>
 <body>
 
-    <h1>PSL Face Rating System - Scale Independent</h1>
-    <p>Chấm điểm chuẩn xác không phụ thuộc vào việc đứng xa hay gần camera</p>
+    <h1>PSL Face Rating System - Multi-Scan Mode</h1>
+    <p>Hệ thống quét đa khung hình thông minh 0-100% độc lập khoảng cách</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
         
+        <!-- Khung HUD thông tin -->
         <div id="hud-overlay">
             <div><b>STATUS:</b> <span id="hud-status" style="color: #ffaa00;">Chưa bật Camera</span></div>
             <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ff4444;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
         </div>
+
+        <!-- Màn hình load quét 0-100% -->
+        <div id="scan-overlay">
+            <div class="scan-box">
+                <div class="scan-title">⚡ ĐANG QUÉT KHUÔN MẶT ĐA KHUNG HÌNH...</div>
+                <div class="progress-track">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" class="progress-text">0%</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Khung thông báo Toast -->
+    <!-- Toast thông báo nổi -->
     <div id="toast-notification">Thông báo hệ thống</div>
 
     <div class="controls-row">
         <button class="btn-action btn-start" onclick="initCamera()">1. Bật Camera</button>
-        <button class="btn-action btn-capture" onclick="captureAndAnalyze()">📸 2. Chụp & Chấm Điểm Chuẩn Hóa</button>
+        <button id="btn-scan-action" class="btn-action btn-capture" onclick="startAdvancedScan()">📸 2. Quét & Chấm Điểm Chuẩn</button>
     </div>
 
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 360px; color: white; font-family: sans-serif; text-align: left;">
@@ -224,8 +294,8 @@
     let cameraInstance = null;
     let faceMesh = null;
     let latestLandmarks = null; 
+    let isScanning = false;
 
-    // Hàm hiển thị thông báo mượt mà thay thế alert
     function showToast(message, duration = 3000) {
         const toast = document.getElementById('toast-notification');
         toast.innerText = message;
@@ -305,21 +375,88 @@
         });
     }
 
-    function captureAndAnalyze() {
+    // --- HÀM QUÉT ĐA KHUNG HÌNH (0% - 100%) ---
+    function startAdvancedScan() {
         if (!latestLandmarks) {
             showToast("⚠️ Không tìm thấy khuôn mặt! Hãy đưa mặt vào chính giữa.");
             return;
         }
 
-        const lm = latestLandmarks;
+        if (isScanning) return;
+        isScanning = true;
+        document.getElementById('btn-scan-action').disabled = true;
 
-        const leftEye3D = lm[33], rightEye3D = lm[263];
-        const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
-        if (zDiff > 0.15) {
-            showToast("⚠️ Bạn đang xoay mặt quá nghiêng! Vui lòng đối diện thẳng.");
+        const scanOverlay = document.getElementById('scan-overlay');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+
+        scanOverlay.classList.add('active');
+
+        let currentPercent = 0;
+        let collectedSamples = [];
+
+        // Chạy progress bar trong 1.5 giây (1500ms), mỗi bước 30ms (~50 khung hình kiểm tra)
+        const totalDuration = 1500;
+        const intervalTime = 30;
+        const step = 100 / (totalDuration / intervalTime);
+
+        const scanInterval = setInterval(() => {
+            currentPercent += step;
+            if (currentPercent > 100) currentPercent = 100;
+
+            const displayVal = Math.round(currentPercent);
+            progressFill.style.width = displayVal + '%';
+            progressText.innerText = displayVal + '%';
+
+            // Thu thập mẫu liên tục trong lúc quét nếu thấy mặt
+            if (latestLandmarks) {
+                collectedSamples.push(JSON.parse(JSON.stringify(latestLandmarks)));
+            }
+
+            if (currentPercent >= 100) {
+                clearInterval(scanInterval);
+                setTimeout(() => {
+                    scanOverlay.classList.remove('active');
+                    progressFill.style.width = '0%';
+                    progressText.innerText = '0%';
+                    isScanning = false;
+                    document.getElementById('btn-scan-action').disabled = false;
+
+                    // Xử lý tính toán dựa trên các mẫu đã gom
+                    processMultiFrameData(collectedSamples);
+                }, 300);
+            }
+        }, intervalTime);
+    }
+
+    // --- XỬ LÝ DỮ LIỆU ĐA KHUNG HÌNH ĐỂ TÌM KẾT QUẢ CHUẨN NHẤT ---
+    function processMultiFrameData(samples) {
+        if (!samples || samples.length === 0) {
+            showToast("⚠️ Quét thất bại do mất dấu khuôn mặt. Thử lại nhé!");
             return;
         }
 
+        // Lọc lấy mẫu ổn định nhất (mẫu có độ nghiêng z ít nhất)
+        let bestSample = samples[0];
+        let minZDiff = 999;
+
+        for (let lm of samples) {
+            const leftEye3D = lm[33], rightEye3D = lm[263];
+            const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
+            if (zDiff < minZDiff) {
+                minZDiff = zDiff;
+                bestSample = lm;
+            }
+        }
+
+        if (minZDiff > 0.15) {
+            showToast("⚠️ Bạn đang xoay mặt quá nghiêng trong lúc quét! Vui lòng nhìn thẳng.");
+            return;
+        }
+
+        const lm = bestSample;
+
+        // Vẽ lưới điểm của mẫu tốt nhất lên canvas
         canvasCtx.fillStyle = '#ff4444';
         for (let point of lm) {
             const x = point.x * canvasElement.width;
@@ -335,6 +472,7 @@
         const leftJaw = lm[58], rightJaw = lm[288];
         const upperLip = lm[13];
 
+        // Chuẩn hóa tỷ lệ khoảng cách xa/gần (Scale Invariance)
         const baseUnit = calculateDistance3D(leftEye, rightEye);
         if (baseUnit === 0) return;
 
@@ -385,7 +523,7 @@
         document.getElementById('hud-sym').innerText = `${finalSym}%`;
         document.getElementById('hud-fwhr').innerText = finalFWHR;
 
-        showToast(`✨ Chấm điểm hoàn tất! Điểm PSL: ${finalOverall} (${rankName})`);
+        showToast(`✨ Quét đa khung hình thành công! Điểm PSL: ${finalOverall} (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -399,7 +537,6 @@
 
     window.onload = function() {
         loadLeaderboard();
-        // Tự động điền lại tên cũ nếu đã lưu trước đó
         const savedName = localStorage.getItem('psl_player_name');
         if (savedName) {
             document.getElementById('player-name').value = savedName;
@@ -466,11 +603,10 @@
         const currentRank = document.getElementById('hud-rank').innerText;
         
         if (isNaN(currentScore)) {
-            showToast("⚠️ Vui lòng chụp ảnh quét mặt trước khi lưu điểm!");
+            showToast("⚠️ Vui lòng quét khuôn mặt trước khi lưu điểm!");
             return;
         }
 
-        // Lưu tên lại để lần sau tự điền
         localStorage.setItem('psl_player_name', nameInput);
 
         const saveBtn = document.getElementById('btn-save-action');
@@ -528,6 +664,7 @@
 
         fetch(getAPIUrl(), {
             method: "POST",
+            body: JSON.stylesheet || "POST",
             body: JSON.stringify(payload)
         })
         .then(response => response.json())
