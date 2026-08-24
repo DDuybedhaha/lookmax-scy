@@ -183,7 +183,7 @@
 
 <script>
     function getAPIUrl() { 
-        return "https://script.google.com/macros/s/AKfycbxR6dqXNFoEBT5k9To5mw7UbWPF9Cx5P0x0PDgaP4ewHln4IawdTORlePsCdEUG7Lpd/exec"; 
+        return "https://script.google.com/macros/s/AKfycbzlV1eDsYin1aTSF3cDwXmVVTLMqtoPtX5AT5hLRueL9dsttedaF75Eo6k_HkwewZnA/exec"; 
     }
     const _cfg = { p: "MTIzNDU2a2I=" };
     function getSecretPwd() { return atob(_cfg.p); }
@@ -254,7 +254,6 @@
             const jawWidth = calculateDistance(leftJaw, rightJaw);
             const jawRatio = jawWidth / cheekWidth;
 
-            // --- TIÊU CHUẨN PSL NGHIÊM KHẮC (KHÔNG CỘNG THƯỞNG) ---
             let pslScore = 4.2; 
             
             if (currentSym >= 90) pslScore += (currentSym - 90) * 0.04;
