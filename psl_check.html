@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Face Rating System - Advanced Scan Mode</title>
+    <title>PSL Face Rating System - Pro Biometric Mode</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -42,6 +42,11 @@
             transform: scaleX(-1);
         }
 
+        #freeze_canvas {
+            display: none;
+            z-index: 5;
+        }
+
         #hud-overlay {
             position: absolute;
             top: 12px;
@@ -52,14 +57,13 @@
             padding: 10px 14px;
             border-radius: 8px;
             border: 1px solid rgba(245, 245, 245, 0.466);
-            font-size: 13px;
+            font-size: 12px;
             z-index: 10;
             text-align: left;
-            line-height: 1.6;
+            line-height: 1.5;
             pointer-events: none;
         }
 
-        /* --- THANH LOADING QUÉT 0-100% --- */
         #scan-overlay {
             position: absolute;
             top: 0;
@@ -116,7 +120,6 @@
             color: #fff;
         }
 
-        /* Toast thông báo nổi */
         #toast-notification {
             position: fixed;
             bottom: 20px;
@@ -214,25 +217,25 @@
 </head>
 <body>
 
-    <h1>PSL Face Rating System - Multi-Scan Mode</h1>
-    <p>Hệ thống quét đa khung hình thông minh 0-100% độc lập khoảng cách</p>
+    <h1>PSL Face Rating System - Pro Biometric Mode</h1>
+    <p>Hệ thống quét đóng băng kết hợp thuật toán nhân trắc học chuyên sâu</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
+        <canvas id="freeze_canvas" width="640" height="480"></canvas>
         
-        <!-- Khung HUD thông tin -->
         <div id="hud-overlay">
             <div><b>STATUS:</b> <span id="hud-status" style="color: #ffaa00;">Chưa bật Camera</span></div>
             <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ff4444;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
+            <div><b>JAW:</b> <span id="hud-jaw" style="color: #fff;">--</span> | <b>RATIO:</b> <span id="hud-ratio" style="color: #fff;">--</span></div>
         </div>
 
-        <!-- Màn hình load quét 0-100% -->
         <div id="scan-overlay">
             <div class="scan-box">
-                <div class="scan-title">⚡ ĐANG QUÉT KHUÔN MẶT ĐA KHUNG HÌNH...</div>
+                <div class="scan-title">⚡ ĐANG PHÂN TÍCH NHÂN TRẮC HỌC...</div>
                 <div class="progress-track">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
@@ -241,12 +244,11 @@
         </div>
     </div>
 
-    <!-- Toast thông báo nổi -->
     <div id="toast-notification">Thông báo hệ thống</div>
 
     <div class="controls-row">
         <button class="btn-action btn-start" onclick="initCamera()">1. Bật Camera</button>
-        <button id="btn-scan-action" class="btn-action btn-capture" onclick="startAdvancedScan()">📸 2. Quét & Chấm Điểm Chuẩn</button>
+        <button id="btn-scan-action" class="btn-action btn-capture" onclick="startFreezeScan()">📸 2. Quét & Chấm Điểm Chuẩn</button>
     </div>
 
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 360px; color: white; font-family: sans-serif; text-align: left;">
@@ -290,6 +292,8 @@
     const videoElement = document.getElementById('webcam');
     const canvasElement = document.getElementById('output_canvas');
     const canvasCtx = canvasElement.getContext('2d');
+    const freezeCanvas = document.getElementById('freeze_canvas');
+    const freezeCtx = freezeCanvas.getContext('2d');
 
     let cameraInstance = null;
     let faceMesh = null;
@@ -313,9 +317,11 @@
         );
     }
 
+    // Hệ thống Rank mở rộng cao cấp hơn
     function getPSLRank(score) {
-        if (score >= 8.0) return "Apex / Gigachad 👑";
-        if (score >= 7.0) return "Chad / Top Model ⭐";
+        if (score >= 9.0) return "Mythic / Godtier ⚡👑";
+        if (score >= 8.0) return "Apex / Gigachad 🔥";
+        if (score >= 7.2) return "Chad / Top Model ⭐";
         if (score >= 6.6) return "Chadlite ✨";
         if (score >= 5.7) return "HTN (High-Tier Normal)";
         if (score >= 4.7) return "MTN (Mid-Tier Normal)";
@@ -326,6 +332,8 @@
     async function initCamera() {
         canvasElement.width = 640;
         canvasElement.height = 480;
+        freezeCanvas.width = 640;
+        freezeCanvas.height = 480;
 
         if (cameraInstance !== null) {
             try { await cameraInstance.stop(); } catch(e){}
@@ -343,6 +351,8 @@
         });
 
         faceMesh.onResults((results) => {
+            if (isScanning) return;
+
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
@@ -361,7 +371,7 @@
 
         cameraInstance = new Camera(videoElement, {
             onFrame: async () => {
-                if (faceMesh) {
+                if (faceMesh && !isScanning) {
                     await faceMesh.send({ image: videoElement });
                 }
             },
@@ -375,8 +385,7 @@
         });
     }
 
-    // --- HÀM QUÉT ĐA KHUNG HÌNH (0% - 100%) ---
-    function startAdvancedScan() {
+    function startFreezeScan() {
         if (!latestLandmarks) {
             showToast("⚠️ Không tìm thấy khuôn mặt! Hãy đưa mặt vào chính giữa.");
             return;
@@ -386,6 +395,13 @@
         isScanning = true;
         document.getElementById('btn-scan-action').disabled = true;
 
+        freezeCtx.save();
+        freezeCtx.clearRect(0, 0, freezeCanvas.width, freezeCanvas.height);
+        freezeCtx.drawImage(canvasElement, 0, 0);
+        freezeCtx.restore();
+
+        freezeCanvas.style.display = 'block';
+
         const scanOverlay = document.getElementById('scan-overlay');
         const progressFill = document.getElementById('progress-fill');
         const progressText = document.getElementById('progress-text');
@@ -393,9 +409,8 @@
         scanOverlay.classList.add('active');
 
         let currentPercent = 0;
-        let collectedSamples = [];
+        const capturedLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
 
-        // Chạy progress bar trong 1.5 giây (1500ms), mỗi bước 30ms (~50 khung hình kiểm tra)
         const totalDuration = 1500;
         const intervalTime = 30;
         const step = 100 / (totalDuration / intervalTime);
@@ -408,55 +423,37 @@
             progressFill.style.width = displayVal + '%';
             progressText.innerText = displayVal + '%';
 
-            // Thu thập mẫu liên tục trong lúc quét nếu thấy mặt
-            if (latestLandmarks) {
-                collectedSamples.push(JSON.parse(JSON.stringify(latestLandmarks)));
-            }
-
             if (currentPercent >= 100) {
                 clearInterval(scanInterval);
+                
                 setTimeout(() => {
                     scanOverlay.classList.remove('active');
+                    freezeCanvas.style.display = 'none';
                     progressFill.style.width = '0%';
                     progressText.innerText = '0%';
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    // Xử lý tính toán dựa trên các mẫu đã gom
-                    processMultiFrameData(collectedSamples);
+                    processProBiometricData(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    // --- XỬ LÝ DỮ LIỆU ĐA KHUNG HÌNH ĐỂ TÌM KẾT QUẢ CHUẨN NHẤT ---
-    function processMultiFrameData(samples) {
-        if (!samples || samples.length === 0) {
-            showToast("⚠️ Quét thất bại do mất dấu khuôn mặt. Thử lại nhé!");
+    // --- THUẬT TOÁN CHẤM ĐIỂM NHÂN TRẮC HỌC NÂNG CẤP ---
+    function processProBiometricData(lm) {
+        if (!lm) {
+            showToast("⚠️ Lỗi dữ liệu khuôn mặt. Thử lại nhé!");
             return;
         }
 
-        // Lọc lấy mẫu ổn định nhất (mẫu có độ nghiêng z ít nhất)
-        let bestSample = samples[0];
-        let minZDiff = 999;
-
-        for (let lm of samples) {
-            const leftEye3D = lm[33], rightEye3D = lm[263];
-            const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
-            if (zDiff < minZDiff) {
-                minZDiff = zDiff;
-                bestSample = lm;
-            }
-        }
-
-        if (minZDiff > 0.15) {
-            showToast("⚠️ Bạn đang xoay mặt quá nghiêng trong lúc quét! Vui lòng nhìn thẳng.");
+        const leftEye3D = lm[33], rightEye3D = lm[263];
+        const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
+        if (zDiff > 0.15) {
+            showToast("⚠️ Bạn đang xoay mặt quá nghiêng! Vui lòng nhìn thẳng.");
             return;
         }
 
-        const lm = bestSample;
-
-        // Vẽ lưới điểm của mẫu tốt nhất lên canvas
         canvasCtx.fillStyle = '#ff4444';
         for (let point of lm) {
             const x = point.x * canvasElement.width;
@@ -472,58 +469,78 @@
         const leftJaw = lm[58], rightJaw = lm[288];
         const upperLip = lm[13];
 
-        // Chuẩn hóa tỷ lệ khoảng cách xa/gần (Scale Invariance)
+        // 1. Chuẩn hóa tỷ lệ đơn vị cơ bản (khoảng cách 2 mắt)
         const baseUnit = calculateDistance3D(leftEye, rightEye);
         if (baseUnit === 0) return;
 
+        // 2. Độ đối xứng khuôn mặt (Symmetry)
         const noseBridge = lm[168];
         const distLeftToCenter = calculateDistance3D(leftEye, noseBridge);
         const distRightToCenter = calculateDistance3D(rightEye, noseBridge);
         const symDiff3D = Math.abs(distLeftToCenter - distRightToCenter) / baseUnit;
         const currentSym = Math.min(99.9, Math.max(30.0, (1 - symDiff3D * 3.0) * 100));
 
+        // 3. Tỷ lệ fWHR (Mức độ rộng ngang mặt / chiều cao phần giữa mặt)
         const midFaceHeight3D = calculateDistance3D(eyebrow, upperLip);
         const cheekWidth3D = calculateDistance3D(leftCheek, rightCheek);
         let rawFWHR = midFaceHeight3D > 0 ? (cheekWidth3D / midFaceHeight3D) : 1.70;
         const currentFWHR = rawFWHR * 1.15; 
 
+        // 4. Tỷ lệ phân bổ chiều dọc 1/3 khuôn mặt
         const midHeightRatio = calculateDistance3D(eyebrow, noseBottom) / baseUnit;
         const lowHeightRatio = calculateDistance3D(noseBottom, chin) / baseUnit;
         const thirdRatioDiff = Math.abs(midHeightRatio - lowHeightRatio);
 
+        // 5. Độ sắc nét xương hàm (Jawline Ratio & Compactness)
         const jawWidth3D = calculateDistance3D(leftJaw, rightJaw);
         const jawRatio = jawWidth3D / cheekWidth3D;
 
-        let pslScore = 4.2; 
-        
-        if (currentSym >= 90) pslScore += (currentSym - 90) * 0.04;
-        else if (currentSym < 80) pslScore -= (80 - currentSym) * 0.08;
+        // --- CƠ CHẾ TÍNH ĐIỂM CHI TIẾT & CHUYÊN SÂU ---
+        let pslScore = 4.5; // Điểm nền khởi điểm
 
-        if (currentFWHR >= 1.70 && currentFWHR <= 1.95) {
-            pslScore += 0.5; 
+        // Đánh giá đối xứng (Đóng góp tới 2.2 điểm)
+        if (currentSym >= 92) pslScore += 2.2;
+        else if (currentSym >= 85) pslScore += 1.5;
+        else if (currentSym >= 75) pslScore += 0.8;
+        else pslScore -= (75 - currentSym) * 0.05;
+
+        // Đánh giá fWHR (Tỷ lệ nam tính / hài hòa chuẩn vàng 1.75 - 1.90)
+        if (currentFWHR >= 1.75 && currentFWHR <= 1.90) {
+            pslScore += 1.6; 
+        } else if (currentFWHR >= 1.65 && currentFWHR < 1.75) {
+            pslScore += 0.9;
         } else {
-            pslScore -= Math.abs(currentFWHR - 1.75) * 0.9;
+            pslScore -= Math.abs(currentFWHR - 1.78) * 0.8;
         }
 
-        if (thirdRatioDiff < 0.15) pslScore += 0.4; 
-        else pslScore -= thirdRatioDiff * 1.5;
+        // Đánh giá tỷ lệ 1/3 mặt cân đối
+        if (thirdRatioDiff < 0.10) pslScore += 1.2;
+        else if (thirdRatioDiff < 0.18) pslScore += 0.5;
+        else pslScore -= thirdRatioDiff * 1.2;
 
-        if (jawRatio >= 0.68) pslScore += 0.5; 
-        else if (jawRatio < 0.58) pslScore -= 0.5;
+        // Đánh giá góc hàm (Jawline sắc sảo)
+        if (jawRatio >= 0.70) pslScore += 1.3;
+        else if (jawRatio >= 0.63) pslScore += 0.7;
+        else pslScore -= (0.63 - jawRatio) * 2.0;
 
-        let rawOverall = Math.min(9.5, Math.max(1.5, pslScore));
+        let rawOverall = Math.min(9.7, Math.max(2.0, pslScore));
 
         const finalOverall = rawOverall.toFixed(1);
         const finalSym = currentSym.toFixed(1);
         const finalFWHR = currentFWHR.toFixed(2);
+        const finalJaw = jawRatio.toFixed(2);
+        const finalRatio = thirdRatioDiff.toFixed(2);
         const rankName = getPSLRank(finalOverall);
 
+        // Hiển thị đầy đủ thông số lên HUD
         document.getElementById('hud-score').innerText = finalOverall;
         document.getElementById('hud-rank').innerText = rankName;
         document.getElementById('hud-sym').innerText = `${finalSym}%`;
         document.getElementById('hud-fwhr').innerText = finalFWHR;
+        document.getElementById('hud-jaw').innerText = finalJaw;
+        document.getElementById('hud-ratio').innerText = finalRatio;
 
-        showToast(`✨ Quét đa khung hình thành công! Điểm PSL: ${finalOverall} (${rankName})`);
+        showToast(`✨ Phân tích nhân trắc học thành công! Điểm: ${finalOverall} (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -664,7 +681,6 @@
 
         fetch(getAPIUrl(), {
             method: "POST",
-            body: JSON.stylesheet || "POST",
             body: JSON.stringify(payload)
         })
         .then(response => response.json())
