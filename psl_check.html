@@ -135,7 +135,7 @@
 <body>
 
     <h1>PSL Face Rating System - Strict Mode</h1>
-    <p>Chấm điểm cấu trúc xương mặt thuần PSL (Đã tinh chỉnh dễ thở hơn)</p>
+    <p>Chấm điểm cấu trúc xương mặt thuần PSL (Chuẩn mực nghiêm khắc)</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -182,7 +182,6 @@
     </div>
 
 <script>
-    // URL chuẩn xác mới nhất của bạn
     function getAPIUrl() { 
         return "https://script.google.com/macros/s/AKfycbxR6dqXNFoEBT5k9To5mw7UbWPF9Cx5P0x0PDgaP4ewHln4IawdTORlePsCdEUG7Lpd/exec"; 
     }
@@ -206,7 +205,7 @@
     function getPSLRank(score) {
         if (score >= 8.0) return "Apex / Gigachad 👑";
         if (score >= 7.0) return "Chad / Top Model ⭐";
-        if (score >= 6.6) return "Chadlite ✨"'
+        if (score >= 6.6) return "Chadlite ✨";
         if (score >= 5.7) return "HTN (High-Tier Normal)";
         if (score >= 4.7) return "MTN (Mid-Tier Normal)";
         if (score >= 3.8) return "LTN (Low-Tier Normal)";
@@ -241,8 +240,8 @@
 
             const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
             const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
-            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 2.5);
-            const currentSym = Math.min(99.9, Math.max(40.0, symmetryFactor * 100));
+            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 3.0);
+            const currentSym = Math.min(99.9, Math.max(30.0, symmetryFactor * 100));
 
             const midFaceHeight = calculateDistance(eyebrow, upperLip);
             const cheekWidth = calculateDistance(leftCheek, rightCheek);
@@ -255,24 +254,25 @@
             const jawWidth = calculateDistance(leftJaw, rightJaw);
             const jawRatio = jawWidth / cheekWidth;
 
-            let pslScore = 4.8; 
+            // --- TIÊU CHUẨN PSL NGHIÊM KHẮC (KHÔNG CỘNG THƯỞNG) ---
+            let pslScore = 4.2; 
             
-            if (currentSym >= 88) pslScore += (currentSym - 88) * 0.06;
-            else if (currentSym < 75) pslScore -= (75 - currentSym) * 0.05;
+            if (currentSym >= 90) pslScore += (currentSym - 90) * 0.04;
+            else if (currentSym < 80) pslScore -= (80 - currentSym) * 0.08;
 
-            if (currentFWHR >= 1.65 && currentFWHR <= 2.00) {
-                pslScore += 0.8; 
+            if (currentFWHR >= 1.70 && currentFWHR <= 1.95) {
+                pslScore += 0.5; 
             } else {
-                pslScore -= Math.abs(currentFWHR - 1.75) * 0.6; 
+                pslScore -= Math.abs(currentFWHR - 1.75) * 0.9;
             }
 
-            if (thirdRatioDiff < 0.15) pslScore += 0.6; 
-            else pslScore -= thirdRatioDiff * 1.0; 
+            if (thirdRatioDiff < 0.12) pslScore += 0.4; 
+            else pslScore -= thirdRatioDiff * 1.5;
 
-            if (jawRatio >= 0.65) pslScore += 0.7; 
-            else if (jawRatio < 0.55) pslScore -= 0.3;
+            if (jawRatio >= 0.68) pslScore += 0.5; 
+            else if (jawRatio < 0.58) pslScore -= 0.5;
 
-            let rawOverall = Math.min(9.5, Math.max(2.0, pslScore));
+            let rawOverall = Math.min(9.5, Math.max(1.5, pslScore));
 
             smoothedScore += alpha * (rawOverall - smoothedScore);
             smoothedSym += alpha * (currentSym - smoothedSym);
