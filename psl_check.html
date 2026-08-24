@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Face Rating System - Pro Biometric Mode</title>
+    <title>PSL Standard Rating System - Strict Biometrics</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -217,8 +217,8 @@
 </head>
 <body>
 
-    <h1>PSL Face Rating System - Pro Biometric Mode</h1>
-    <p>Hệ thống quét đóng băng kết hợp thuật toán nhân trắc học chuyên sâu</p>
+    <h1>PSL Standard Rating System - Strict Biometrics</h1>
+    <p>Hệ thống đánh giá nhân trắc học PSL khắt khe theo chuẩn quốc tế</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -235,7 +235,7 @@
 
         <div id="scan-overlay">
             <div class="scan-box">
-                <div class="scan-title">⚡ ĐANG PHÂN TÍCH NHÂN TRẮC HỌC...</div>
+                <div class="scan-title">⚡ ĐANG PHÂN TÍCH PSL CHUẨN...</div>
                 <div class="progress-track">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
@@ -317,16 +317,15 @@
         );
     }
 
-    // Hệ thống Rank mở rộng cao cấp hơn
+    // Phân loại Rank PSL chuẩn chỉnh
     function getPSLRank(score) {
-        if (score >= 9.0) return "Mythic / Godtier ⚡👑";
-        if (score >= 8.0) return "Apex / Gigachad 🔥";
-        if (score >= 7.2) return "Chad / Top Model ⭐";
-        if (score >= 6.6) return "Chadlite ✨";
-        if (score >= 5.7) return "HTN (High-Tier Normal)";
-        if (score >= 4.7) return "MTN (Mid-Tier Normal)";
-        if (score >= 3.8) return "LTN (Low-Tier Normal)";
-        return "Sub-five";
+        if (score >= 8.5) return "Godtier / Apex ⚡👑";
+        if (score >= 7.5) return "Chad / Top Model ⭐";
+        if (score >= 6.5) return "Chadlite ✨";
+        if (score >= 5.5) return "HTN (High-Tier Normal)";
+        if (score >= 4.5) return "MTN (Mid-Tier Normal)";
+        if (score >= 3.5) return "LTN (Low-Tier Normal)";
+        return "Sub-five 📉";
     }
 
     async function initCamera() {
@@ -434,14 +433,14 @@
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    processProBiometricData(capturedLandmarks);
+                    processStrictPSLData(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    // --- THUẬT TOÁN CHẤM ĐIỂM NHÂN TRẮC HỌC NÂNG CẤP ---
-    function processProBiometricData(lm) {
+    // --- THUẬT TOÁN PSL CHUẨN & KHẮT KHE ---
+    function processStrictPSLData(lm) {
         if (!lm) {
             showToast("⚠️ Lỗi dữ liệu khuôn mặt. Thử lại nhé!");
             return;
@@ -449,8 +448,8 @@
 
         const leftEye3D = lm[33], rightEye3D = lm[263];
         const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
-        if (zDiff > 0.15) {
-            showToast("⚠️ Bạn đang xoay mặt quá nghiêng! Vui lòng nhìn thẳng.");
+        if (zDiff > 0.12) {
+            showToast("⚠️ Bạn đang xoay mặt nghiêng! Hãy nhìn thẳng hoàn toàn.");
             return;
         }
 
@@ -469,61 +468,66 @@
         const leftJaw = lm[58], rightJaw = lm[288];
         const upperLip = lm[13];
 
-        // 1. Chuẩn hóa tỷ lệ đơn vị cơ bản (khoảng cách 2 mắt)
         const baseUnit = calculateDistance3D(leftEye, rightEye);
         if (baseUnit === 0) return;
 
-        // 2. Độ đối xứng khuôn mặt (Symmetry)
+        // 1. Độ đối xứng (Symmetry) - Tiêu chuẩn khắt khe
         const noseBridge = lm[168];
         const distLeftToCenter = calculateDistance3D(leftEye, noseBridge);
         const distRightToCenter = calculateDistance3D(rightEye, noseBridge);
         const symDiff3D = Math.abs(distLeftToCenter - distRightToCenter) / baseUnit;
-        const currentSym = Math.min(99.9, Math.max(30.0, (1 - symDiff3D * 3.0) * 100));
+        const currentSym = Math.min(99.9, Math.max(20.0, (1 - symDiff3D * 4.0) * 100));
 
-        // 3. Tỷ lệ fWHR (Mức độ rộng ngang mặt / chiều cao phần giữa mặt)
+        // 2. fWHR chuẩn (Khoảng vàng nam tính: 1.80 - 1.95)
         const midFaceHeight3D = calculateDistance3D(eyebrow, upperLip);
         const cheekWidth3D = calculateDistance3D(leftCheek, rightCheek);
-        let rawFWHR = midFaceHeight3D > 0 ? (cheekWidth3D / midFaceHeight3D) : 1.70;
-        const currentFWHR = rawFWHR * 1.15; 
+        let currentFWHR = midFaceHeight3D > 0 ? (cheekWidth3D / midFaceHeight3D) : 1.70;
 
-        // 4. Tỷ lệ phân bổ chiều dọc 1/3 khuôn mặt
+        // 3. Tỷ lệ 1/3 khuôn mặt theo chiều dọc
         const midHeightRatio = calculateDistance3D(eyebrow, noseBottom) / baseUnit;
         const lowHeightRatio = calculateDistance3D(noseBottom, chin) / baseUnit;
         const thirdRatioDiff = Math.abs(midHeightRatio - lowHeightRatio);
 
-        // 5. Độ sắc nét xương hàm (Jawline Ratio & Compactness)
+        // 4. Độ sắc nét hàm (Jawline Width Ratio)
         const jawWidth3D = calculateDistance3D(leftJaw, rightJaw);
         const jawRatio = jawWidth3D / cheekWidth3D;
 
-        // --- CƠ CHẾ TÍNH ĐIỂM CHI TIẾT & CHUYÊN SÂU ---
-        let pslScore = 4.5; // Điểm nền khởi điểm
+        // --- CÔNG THỨC CHẤM ĐIỂM GỐC PSL (Bắt đầu từ mức trung bình 4.0) ---
+        let pslScore = 4.0; 
 
-        // Đánh giá đối xứng (Đóng góp tới 2.2 điểm)
-        if (currentSym >= 92) pslScore += 2.2;
-        else if (currentSym >= 85) pslScore += 1.5;
-        else if (currentSym >= 75) pslScore += 0.8;
-        else pslScore -= (75 - currentSym) * 0.05;
+        // Đánh giá Độ đối xứng (Rất khắt khe: lệch >5% là bắt đầu bị trừ điểm nặng)
+        if (currentSym >= 95) pslScore += 1.8;
+        else if (currentSym >= 90) pslScore += 1.2;
+        else if (currentSym >= 82) pslScore += 0.5;
+        else pslScore -= (85 - currentSym) * 0.08;
 
-        // Đánh giá fWHR (Tỷ lệ nam tính / hài hòa chuẩn vàng 1.75 - 1.90)
-        if (currentFWHR >= 1.75 && currentFWHR <= 1.90) {
-            pslScore += 1.6; 
-        } else if (currentFWHR >= 1.65 && currentFWHR < 1.75) {
-            pslScore += 0.9;
+        // Đánh giá fWHR (Chuẩn vàng nằm trong khoảng 1.75 - 1.95)
+        if (currentFWHR >= 1.78 && currentFWHR <= 1.92) {
+            pslScore += 1.5;
+        } else if (currentFWHR >= 1.68 && currentFWHR < 1.78) {
+            pslScore += 0.7;
         } else {
-            pslScore -= Math.abs(currentFWHR - 1.78) * 0.8;
+            pslScore -= Math.abs(currentFWHR - 1.80) * 1.2; // Phạt nặng nếu quá dài hoặc quá tròn
         }
 
-        // Đánh giá tỷ lệ 1/3 mặt cân đối
-        if (thirdRatioDiff < 0.10) pslScore += 1.2;
-        else if (thirdRatioDiff < 0.18) pslScore += 0.5;
-        else pslScore -= thirdRatioDiff * 1.2;
+        // Đánh giá chiều dọc 1/3 mặt
+        if (thirdRatioDiff < 0.08) {
+            pslScore += 1.0;
+        } else {
+            pslScore -= thirdRatioDiff * 2.0; // Lệch tỷ lệ tầng mặt sẽ trừ điểm
+        }
 
-        // Đánh giá góc hàm (Jawline sắc sảo)
-        if (jawRatio >= 0.70) pslScore += 1.3;
-        else if (jawRatio >= 0.63) pslScore += 0.7;
-        else pslScore -= (0.63 - jawRatio) * 2.0;
+        // Đánh giá độ rộng khung hàm (Gonial angle / Jaw compactness)
+        if (jawRatio >= 0.72 && jawRatio <= 0.88) {
+            pslScore += 1.2;
+        } else if (jawRatio >= 0.65) {
+            pslScore += 0.5;
+        } else {
+            pslScore -= (0.65 - jawRatio) * 2.5; // Hàm yếu (narrow jaw) bị trừ điểm rõ rệt
+        }
 
-        let rawOverall = Math.min(9.7, Math.max(2.0, pslScore));
+        // Giới hạn điểm số thực tế từ 2.0 đến 9.2 (Đảm bảo không bị ảo tưởng điểm 10)
+        let rawOverall = Math.min(9.2, Math.max(2.0, pslScore));
 
         const finalOverall = rawOverall.toFixed(1);
         const finalSym = currentSym.toFixed(1);
@@ -532,7 +536,6 @@
         const finalRatio = thirdRatioDiff.toFixed(2);
         const rankName = getPSLRank(finalOverall);
 
-        // Hiển thị đầy đủ thông số lên HUD
         document.getElementById('hud-score').innerText = finalOverall;
         document.getElementById('hud-rank').innerText = rankName;
         document.getElementById('hud-sym').innerText = `${finalSym}%`;
@@ -540,7 +543,7 @@
         document.getElementById('hud-jaw').innerText = finalJaw;
         document.getElementById('hud-ratio').innerText = finalRatio;
 
-        showToast(`✨ Phân tích nhân trắc học thành công! Điểm: ${finalOverall} (${rankName})`);
+        showToast(`📊 Đã chấm điểm chuẩn PSL! Điểm: ${finalOverall} (${rankName})`);
     }
 
     function getDeviceToken() {
