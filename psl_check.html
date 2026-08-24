@@ -235,7 +235,7 @@
 <body>
 
     <h1>PSL Authentic Biometric Rating System</h1>
-    <p>Hệ thống đo lường cấu trúc khuôn mặt chuẩn PSL (Looksmax Strict)</p>
+    <p>Hệ thống đo lường cấu trúc khuôn mặt chuẩn PSL (Looksmax Ultra-Strict)</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -243,7 +243,7 @@
         <canvas id="freeze_canvas" width="640" height="480"></canvas>
         
         <div id="hud-overlay">
-            <div class="hud-title">⚡ STRICT PSL ANALYZER</div>
+            <div class="hud-title">⚡ ULTRA-STRICT PSL</div>
             <div><b>OVERALL:</b> <span id="hud-score" style="color: #f63366; font-size: 13px;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>Dimorphism:</b> <span id="hud-dimorph" style="color: #fff;">--</span></div>
@@ -333,9 +333,9 @@
     }
 
     function getPSLRank(score) {
-        if (score >= 7.2) return "Godtier / Apex ⚡";
-        if (score >= 6.4) return "Chad / Model 🔥";
-        if (score >= 5.5) return "Chadlite ✨";
+        if (score >= 6.8) return "Godtier / Apex ⚡";
+        if (score >= 6.0) return "Chad / Model 🔥";
+        if (score >= 5.2) return "Chadlite ✨";
         if (score >= 4.5) return "HTN (High-Tier Normal)";
         if (score >= 3.8) return "MTN (Mid-Tier Normal)";
         return "Sub-five / LTN 📉";
@@ -469,7 +469,7 @@
         }, intervalTime);
     }
 
-    // --- THUẬT TOÁN PSL GẮT (STRICT LOOKSMAX STANDARD) ---
+    // --- THUẬT TOÁN PSL ULTRA-STRICT (CHẤM CỰC KỲ GẮT, TRÁNH RANK ẢO) ---
     function processBalancedPSL(lm) {
         if (!lm) return;
 
@@ -479,54 +479,52 @@
         const leftCheek = lm[234], rightCheek = lm[454];
         const forehead = lm[10];
 
-        // 1. Độ đối xứng (Symmetry) cực kỳ khắt khe
+        // 1. Độ đối xứng cực kỳ khắt khe (Nhân hệ số phạt độ lệch lớn)
         const leftDist = calculateDistance3D(leftEyeInner, noseTip);
         const rightDist = calculateDistance3D(rightEyeInner, noseTip);
         const symDiff = Math.abs(leftDist - rightDist) / ((leftDist + rightDist) / 2);
-        let symmetryPct = Math.max(50.0, Math.min(99.0, (1 - symDiff * 6.5) * 100));
+        let symmetryPct = Math.max(40.0, Math.min(99.0, (1 - symDiff * 8.5) * 100));
 
-        // 2. Tỷ lệ ngang mặt (Bizygomatic Width vs Inter-ocular Distance)
+        // 2. Tỷ lệ ngang mặt
         const faceWidth = calculateDistance3D(leftCheek, rightCheek);
         const eyeSpan = calculateDistance3D(leftEyeInner, rightEyeInner);
         const structRatio = faceWidth / (eyeSpan > 0 ? eyeSpan : 1);
 
-        // 3. Tỷ lệ chiều dọc (Trán - Mũi - Cằm)
+        // 3. Tỷ lệ dọc mặt
         const upperFace = calculateDistance3D(forehead, noseTip);
         const lowerFace = calculateDistance3D(noseTip, chin);
         const verticalRatio = Math.abs(upperFace - lowerFace) / ((upperFace + lowerFace) / 2);
 
-        // --- KHỞI TẠO ĐIỂM CƠ SỞ THẤP (STANDARD BASELINE: 4.2) ---
-        let baseScore = 4.2;
+        // --- KHỞI TẠO ĐIỂM CƠ SỞ THẤP (3.6 - XUẤT PHÁT DƯỚI TRUNG BÌNH) ---
+        let baseScore = 3.6;
 
-        // Thưởng/Phạt theo độ đối xứng gắt
-        if (symmetryPct >= 93) baseScore += 1.8;
-        else if (symmetryPct >= 86) baseScore += 1.2;
-        else if (symmetryPct >= 78) baseScore += 0.6;
-        else baseScore -= 0.3;
+        // Phạt nặng nếu đối xứng dưới 90%
+        if (symmetryPct >= 96) baseScore += 1.6;
+        else if (symmetryPct >= 90) baseScore += 1.0;
+        else if (symmetryPct >= 82) baseScore += 0.4;
+        else baseScore -= 0.4; // Phạt trực diện vì lệch
 
-        // Thưởng/Phạt theo tỷ lệ cấu trúc khung xương mặt
-        if (structRatio >= 2.9 && structRatio <= 3.3) {
-            baseScore += 0.9;
+        // Đánh giá khung cấu trúc xương gò má (Hẹp/Bè đều bị trừ điểm nặng)
+        if (structRatio >= 3.0 && structRatio <= 3.2) {
+            baseScore += 0.8;
         } else {
-            baseScore -= 0.2;
+            baseScore -= 0.3;
         }
 
         // Phạt tỷ lệ dọc không cân đối
-        if (verticalRatio > 0.15) {
-            baseScore -= 0.4;
+        if (verticalRatio > 0.12) {
+            baseScore -= 0.5;
         }
 
-        // Siết chặt biên độ điểm tối đa ở mức 7.4
-        let finalScore = Math.min(7.4, Math.max(3.8, baseScore)).toFixed(1);
+        // Giới hạn điểm trần nghiêm ngặt ở mức 6.8 (Cực kỳ khó chạm mốc Chad)
+        let finalScore = Math.min(6.8, Math.max(3.2, baseScore)).toFixed(1);
 
-        // Chỉ số hiển thị phong cách PSL chuyên sâu
-        let dimorphStr = structRatio >= 2.9 ? "Dimorphic / Lean ⚡" : "Soft / Rounded 📉";
-        let harmonyStr = symmetryPct >= 85 ? "Good Harmony ⚖️" : "Asymmetric Flaw ⚠️";
-        let eyeAreaStr = (calculateDistance3D(leftEyeOuter, leftEyeInner) > 0.14) ? "Positive Tilt / Compact 🔥" : "Neutral / Average";
+        let dimorphStr = structRatio >= 3.0 ? "Dimorphic ⚡" : "Sub-optimal Frame 📉";
+        let harmonyStr = symmetryPct >= 90 ? "High Symmetry ⚖️" : "Asymmetric Flaw ⚠️";
+        let eyeAreaStr = (calculateDistance3D(leftEyeOuter, leftEyeInner) > 0.14) ? "Compact 🔥" : "Standard / Wide";
 
         const rankName = getPSLRank(parseFloat(finalScore));
 
-        // Đẩy lên HUD giao diện
         document.getElementById('hud-score').innerText = finalScore;
         document.getElementById('hud-rank').innerText = rankName;
         document.getElementById('hud-dimorph').innerText = dimorphStr;
@@ -534,7 +532,7 @@
         document.getElementById('hud-eyearea').innerText = eyeAreaStr;
         document.getElementById('hud-sym').innerText = `${symmetryPct.toFixed(1)}%`;
 
-        showToast(`🗿 PSL Standard: ${finalScore}/10 (${rankName}) - Chấm khắt khe!`);
+        showToast(`🗿 Ultra-Strict PSL: ${finalScore}/10 (${rankName})`);
     }
 
     function getDeviceToken() {
