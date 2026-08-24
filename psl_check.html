@@ -97,6 +97,24 @@
         .btn-save:hover {
             background: #3e3e3e;
         }
+
+        /* Tùy chỉnh khung cuộn cho bảng xếp hạng từ top 4 trở xuống */
+        .leaderboard-scroll {
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: left;
+            padding-left: 20px;
+            margin: 0;
+            scrollbar-width: thin;
+            scrollbar-color: #555 #111;
+        }
+        .leaderboard-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .leaderboard-scroll::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -117,7 +135,7 @@
 
     <button class="btn-start" onclick="initAI()">Bắt đầu quét khuôn mặt</button>
 
-    <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 340px; color: white; font-family: sans-serif; text-align: left;">
+    <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 360px; color: white; font-family: sans-serif; text-align: left;">
         <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng Cloud</h3>
         
         <div style="margin-bottom: 12px; display: flex;">
@@ -125,9 +143,26 @@
             <button type="button" onclick="saveGlobalScore()" class="btn-save">Lưu</button>
         </div>
 
-        <ul id="leaderboard-list" style="padding-left: 20px; margin: 0 0 10px 0;">
-            <li>Đang tải bảng xếp hạng...</li>
+        <!-- Top 3 Cố Định -->
+        <div style="font-size: 13px; font-weight: bold; color: #ffaa00; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
+        <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 14px;">
+            <li>Đang tải...</li>
         </ul>
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
+
+        <!-- Từ Top 4 trở xuống (Có thanh cuộn) -->
+        <div style="font-size: 13px; font-weight: bold; color: #888; margin-bottom: 5px;">📜 Các vị trí khác (Cuộn xuống xem):</div>
+        <ul id="rest-list" class="leaderboard-scroll" style="font-size: 13px;">
+            <li>Đang tải...</li>
+        </ul>
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
+
+        <!-- Hiển thị thông tin người chơi ở dưới cùng -->
+        <div id="user-status-box" style="font-size: 13px; background: #1a1b22; padding: 8px; border-radius: 6px; text-align: center;">
+            Trạng thái của bạn: <b>Chưa xác định</b>
+        </div>
     </div>
 
 <script>
@@ -184,48 +219,38 @@
             const eyeDistance = calculateDistance(leftEye, rightEye);
             if (eyeDistance === 0) return;
 
-            // 1. Độ cân đối xương (Symmetry) cực kỳ khắt khe
             const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
             const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
-            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 2.5); // Phạt nặng hơn nếu lệch
+            const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 2.5);
             const currentSym = Math.min(99.9, Math.max(40.0, symmetryFactor * 100));
 
-            // 2. Chỉ số fWHR (Mức độ rộng ngang mặt / chiều cao mặt giữa)
             const midFaceHeight = calculateDistance(eyebrow, upperLip);
             const cheekWidth = calculateDistance(leftCheek, rightCheek);
             let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.70;
             const currentFWHR = rawFWHR * 1.35; 
 
-            // 3. Tỷ lệ 1/3 khuôn mặt & độ rộng xương hàm (Gonial Angle / Jaw width)
             const midHeight = calculateDistance(eyebrow, noseBottom) / eyeDistance;
             const lowHeight = calculateDistance(noseBottom, chin) / eyeDistance;
             const thirdRatioDiff = Math.abs(midHeight - lowHeight);
             const jawWidth = calculateDistance(leftJaw, rightJaw);
             const jawRatio = jawWidth / cheekWidth;
 
-            // --- THUẬT TOÁN PSL CHẤM ĐIỂM GẮT GAO (Bắt đầu từ mốc 4.0 trung bình thấp) ---
             let pslScore = 4.2; 
-
-            // Thưởng phạt Symmetry gắt
             if (currentSym >= 90) pslScore += (currentSym - 90) * 0.05;
             else if (currentSym < 80) pslScore -= (80 - currentSym) * 0.08;
 
-            // Thưởng phạt fWHR chuẩn khung xương Nam tính/Hài hòa (Lý tưởng ~1.7 - 1.9)
             if (currentFWHR >= 1.70 && currentFWHR <= 1.95) {
                 pslScore += 0.6;
             } else {
-                pslScore -= Math.abs(currentFWHR - 1.75) * 0.9; // Lệch chuẩn là trừ điểm sâu
+                pslScore -= Math.abs(currentFWHR - 1.75) * 0.9;
             }
 
-            // Tỷ lệ 3 phần mặt cân đối
             if (thirdRatioDiff < 0.12) pslScore += 0.5;
             else pslScore -= thirdRatioDiff * 1.5;
 
-            // Xương hàm bạnh / sắc nét (Jawline)
             if (jawRatio >= 0.70) pslScore += 0.6;
-            else if (jawRatio < 0.58) pslScore -= 0.5; // Hàm hẹp bị trừ điểm
+            else if (jawRatio < 0.58) pslScore -= 0.5;
 
-            // Khóa khung điểm nghiêm ngặt từ 2.0 đến 9.0 (Rất khó chạm mốc 8-9 nếu không phải cực phẩm)
             let rawOverall = Math.min(9.0, Math.max(2.0, pslScore));
 
             smoothedScore += alpha * (rawOverall - smoothedScore);
@@ -298,19 +323,49 @@
         fetch(GOOGLE_API_URL)
             .then(response => response.json())
             .then(data => {
-                let html = "";
+                let top3Html = "";
+                let restHtml = "";
+                
                 if (!data || data.length === 0) {
-                    html = "<li>Chưa có ai lên bảng vàng.</li>";
+                    top3Html = "<li>Chưa có ai lên bảng vàng.</li>";
+                    restHtml = "<li>Trống.</li>";
                 } else {
                     data.sort((a, b) => b.score - a.score);
-                    data.slice(0, 10).forEach((item, index) => {
-                        html += `<li style="margin-bottom: 5px;"><b>#${index + 1}</b> ${item.name}: <span style="color: #ff4444;">${item.score}</span> (${item.rank})</li>`;
+                    
+                    // Render Top 3
+                    const top3 = data.slice(0, 3);
+                    top3.forEach((item, index) => {
+                        let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
+                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ff4444;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
+
+                    // Render Từ Top 4 trở xuống
+                    const theRest = data.slice(3);
+                    if (theRest.length === 0) {
+                        restHtml = "<li style='color: #666;'>Chưa có thêm thành viên nào khác.</li>";
+                    } else {
+                        theRest.forEach((item, index) => {
+                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #ff4444;">${item.score}</span> (${item.rank})</li>`;
+                        });
+                    }
+
+                    // Tìm xem thiết bị này (token) đã lưu tên nào chưa để hiển thị ở khung dưới
+                    const myToken = getDeviceToken();
+                    const myRecord = data.find(x => x.token === myToken);
+                    const userBox = document.getElementById('user-status-box');
+                    if (myRecord) {
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${data.indexOf(myRecord) + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ff4444;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
+                    } else {
+                        userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
+                    }
                 }
-                document.getElementById('leaderboard-list').innerHTML = html;
+                
+                document.getElementById('top3-list').innerHTML = top3Html;
+                document.getElementById('rest-list').innerHTML = restHtml;
             })
             .catch(err => {
-                document.getElementById('leaderboard-list').innerHTML = "<li>Lỗi tải bảng xếp hạng.</li>";
+                document.getElementById('top3-list').innerHTML = "<li>Lỗi tải dữ liệu.</li>";
+                document.getElementById('rest-list').innerHTML = "<li>Lỗi tải dữ liệu.</li>";
             });
     }
 
