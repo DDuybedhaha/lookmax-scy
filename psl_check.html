@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Realistic Biometric Rating System</title>
+    <title>PSL Authentic Biometric Rating System</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -97,7 +97,7 @@
         .scan-title {
             font-size: 14px;
             font-weight: bold;
-            color: #ffaa00;
+            color: #ff3333;
             margin-bottom: 12px;
         }
         .progress-track {
@@ -111,7 +111,7 @@
         .progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #ffaa00, #ff5500);
+            background: linear-gradient(90deg, #ff3333, #ff8800);
             transition: width 0.05s linear;
         }
         .progress-text {
@@ -217,8 +217,8 @@
 </head>
 <body>
 
-    <h1>PSL Realistic Biometric Rating System</h1>
-    <p>Hệ thống quét khuôn mặt với thang điểm thực tế, sát mặt bằng chung</p>
+    <h1>PSL Authentic Biometric Rating System</h1>
+    <p>Hệ thống chấm điểm chuẩn chỉnh đúng tiêu chuẩn PSL nguyên bản (Khắt khe & Khách quan)</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -227,7 +227,7 @@
         
         <div id="hud-overlay">
             <div><b>STATUS:</b> <span id="hud-status" style="color: #ffaa00;">Chưa bật Camera</span></div>
-            <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ffaa00;">--</span>/10</div>
+            <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ff3333;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
             <div><b>JAW:</b> <span id="hud-jaw" style="color: #fff;">--</span> | <b>RATIO:</b> <span id="hud-ratio" style="color: #fff;">--</span></div>
@@ -235,7 +235,7 @@
 
         <div id="scan-overlay">
             <div class="scan-box">
-                <div class="scan-title">⏳ ĐANG PHÂN TÍCH TỶ LỆ...</div>
+                <div class="scan-title">⚖️ PHÂN TÍCH CHUẨN PSL GỐC...</div>
                 <div class="progress-track">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
@@ -259,7 +259,7 @@
             <button type="button" onclick="saveGlobalScore()" id="btn-save-action" class="btn-save">Lưu</button>
         </div>
 
-        <div style="font-size: 13px; font-weight: bold; color: #ffaa00; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
+        <div style="font-size: 13px; font-weight: bold; color: #ff3333; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
         <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 14px;">
             <li>Đang tải...</li>
         </ul>
@@ -318,11 +318,12 @@
     }
 
     function getPSLRank(score) {
-        if (score >= 7.5) return "Chad / Top Model ⭐";
-        if (score >= 6.5) return "Chadlite ✨";
-        if (score >= 5.5) return "HTN (High-Tier Normal)";
-        if (score >= 4.5) return "MTN (Mid-Tier Normal)";
-        if (score >= 3.5) return "LTN (Low-Tier Normal)";
+        if (score >= 7.5) return "Godtier / Apex ⚡👑";
+        if (score >= 6.5) return "Chad / Top Model ⭐";
+        if (score >= 5.5) return "Chadlite ✨";
+        if (score >= 4.5) return "HTN (High-Tier Normal)";
+        if (score >= 3.5) return "MTN (Mid-Tier Normal)";
+        if (score >= 2.5) return "LTN (Low-Tier Normal)";
         return "Sub-five 📉";
     }
 
@@ -431,14 +432,14 @@
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    processRealisticPSL(capturedLandmarks);
+                    processAuthenticPSL(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    // --- THUẬT TOÁN PSL THỰC TẾ (ĐIỂM NỀN 3.5, DỄ RƠI VÀO VÙNG TRUNG BÌNH THỰC TẾ) ---
-    function processRealisticPSL(lm) {
+    // --- THUẬT TOÁN CHUẨN PSL GỐC (ĐIỂM NỀN 3.0, HỆ SỐ KHẮT KHE) ---
+    function processAuthenticPSL(lm) {
         if (!lm) {
             showToast("⚠️ Lỗi dữ liệu khuôn mặt. Thử lại nhé!");
             return;
@@ -447,10 +448,10 @@
         const leftEye3D = lm[33], rightEye3D = lm[263];
         const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
         if (zDiff > 0.12) {
-            showToast("⚠️ Góc mặt hơi nghiêng, hãy nhìn thẳng hơn.");
+            showToast("⚠️ Góc mặt hơi nghiêng, hãy nhìn thẳng hơn để đo chính xác.");
         }
 
-        canvasCtx.fillStyle = '#ffaa00';
+        canvasCtx.fillStyle = '#ff3333';
         for (let point of lm) {
             const x = point.x * canvasElement.width;
             const y = point.y * canvasElement.height;
@@ -473,9 +474,9 @@
         const distLeftToCenter = calculateDistance3D(leftEye, noseBridge);
         const distRightToCenter = calculateDistance3D(rightEye, noseBridge);
         const symDiff3D = Math.abs(distLeftToCenter - distRightToCenter) / baseUnit;
-        const currentSym = Math.min(99.9, Math.max(50.0, (1 - symDiff3D * 4.0) * 100));
+        const currentSym = Math.min(99.9, Math.max(40.0, (1 - symDiff3D * 5.0) * 100));
 
-        // 2. fWHR
+        // 2. fWHR chuẩn vàng (1.80 - 1.88)
         const midFaceHeight3D = calculateDistance3D(eyebrow, upperLip);
         const cheekWidth3D = calculateDistance3D(leftCheek, rightCheek);
         let currentFWHR = midFaceHeight3D > 0 ? (cheekWidth3D / midFaceHeight3D) : 1.75;
@@ -489,38 +490,38 @@
         const jawWidth3D = calculateDistance3D(leftJaw, rightJaw);
         const jawRatio = jawWidth3D / cheekWidth3D;
 
-        // --- CÔNG THỨC CHẤM THỰC TẾ: ĐIỂM NỀN 3.5 ---
-        let pslScore = 3.5; 
+        // --- HỆ THỐNG TÍNH ĐIỂM GẮT GAO (BASE 3.0) ---
+        let pslScore = 3.0; 
 
-        // Thưởng/Phạt đối xứng vừa phải
-        if (currentSym >= 95) pslScore += 1.2;
-        else if (currentSym >= 88) pslScore += 0.6;
-        else if (currentSym >= 75) pslScore += 0.2;
-        else pslScore -= 0.5;
+        // Khắt khe với độ đối xứng
+        if (currentSym >= 96) pslScore += 1.5;
+        else if (currentSym >= 90) pslScore += 0.8;
+        else if (currentSym >= 82) pslScore += 0.3;
+        else pslScore -= 0.6;
 
-        // Thưởng/Phạt fWHR (chuẩn vàng 1.80 - 1.90)
-        if (currentFWHR >= 1.78 && currentFWHR <= 1.92) {
+        // Khắt khe với tỷ lệ fWHR
+        if (currentFWHR >= 1.80 && currentFWHR <= 1.88) {
             pslScore += 1.2;
         } else {
-            pslScore -= Math.abs(currentFWHR - 1.85) * 1.5; 
+            pslScore -= Math.abs(currentFWHR - 1.84) * 2.2; 
         }
 
-        // Thưởng/Phạt tỷ lệ 1/3 tầng mặt
-        if (thirdRatioDiff < 0.05) {
+        // Khắt khe với tỷ lệ 1/3 mặt
+        if (thirdRatioDiff < 0.04) {
             pslScore += 1.0;
         } else {
-            pslScore -= thirdRatioDiff * 2.5; 
+            pslScore -= thirdRatioDiff * 3.5; 
         }
 
-        // Thưởng/Phạt khung hàm
-        if (jawRatio >= 0.72 && jawRatio <= 0.85) {
+        // Khắt khe với khung hàm
+        if (jawRatio >= 0.75 && jawRatio <= 0.82) {
             pslScore += 0.8;
         } else {
-            pslScore -= 0.3; 
+            pslScore -= 0.5; 
         }
 
-        // Giới hạn điểm số thực tế từ 3.5 đến 7.8 (Tránh bị đẩy quá cao, phản ánh đúng mặt bằng đời thực)
-        let rawOverall = Math.min(7.8, Math.max(3.5, pslScore));
+        // Giới hạn điểm số khắt khe theo chuẩn PSL từ 2.5 đến 7.5
+        let rawOverall = Math.min(7.5, Math.max(2.5, pslScore));
 
         const finalOverall = rawOverall.toFixed(1);
         const finalSym = currentSym.toFixed(1);
@@ -536,7 +537,7 @@
         document.getElementById('hud-jaw').innerText = finalJaw;
         document.getElementById('hud-ratio').innerText = finalRatio;
 
-        showToast(`✨ Đã chấm điểm thực tế! Điểm: ${finalOverall} (${rankName})`);
+        showToast(`⚖️ Đã chấm xong (Chuẩn PSL Gốc)! Điểm: ${finalOverall} (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -572,7 +573,7 @@
                     const top3 = data.slice(0, 3);
                     top3.forEach((item, index) => {
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
-                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ffaa00;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
+                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ff3333;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
                     const theRest = data.slice(3);
@@ -580,7 +581,7 @@
                         restHtml = "<li style='color: #666;'>Chưa có thêm thành viên nào khác.</li>";
                     } else {
                         theRest.forEach((item, index) => {
-                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #ffaa00;">${item.score}</span> (${item.rank})</li>`;
+                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #ff3333;">${item.score}</span> (${item.rank})</li>`;
                         });
                     }
 
@@ -590,7 +591,7 @@
                     
                     if (myRecordIndex !== -1) {
                         const myRecord = data[myRecordIndex];
-                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ffaa00;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ff3333;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
                     } else {
                         userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
                     }
