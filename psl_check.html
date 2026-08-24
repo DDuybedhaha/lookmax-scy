@@ -98,6 +98,22 @@
             background: #3e3e3e;
         }
 
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+        .btn-danger:hover {
+            background: #cc0000;
+        }
+
         /* Tùy chỉnh khung cuộn cho bảng xếp hạng từ top 4 trở xuống */
         .leaderboard-scroll {
             max-height: 150px;
@@ -160,8 +176,13 @@
         <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
 
         <!-- Hiển thị thông tin người chơi ở dưới cùng -->
-        <div id="user-status-box" style="font-size: 13px; background: #1a1b22; padding: 8px; border-radius: 6px; text-align: center;">
+        <div id="user-status-box" style="font-size: 13px; background: #1a1b22; padding: 8px; border-radius: 6px; text-align: center; margin-bottom: 10px;">
             Trạng thái của bạn: <b>Chưa xác định</b>
+        </div>
+
+        <!-- Nút Xóa Data Bảng Xếp Hạng có mật khẩu -->
+        <div style="text-align: center;">
+            <button type="button" onclick="clearLeaderboardData()" class="btn-danger">🗑️ Xóa toàn bộ BXH</button>
         </div>
     </div>
 
@@ -332,14 +353,12 @@
                 } else {
                     data.sort((a, b) => b.score - a.score);
                     
-                    // Render Top 3
                     const top3 = data.slice(0, 3);
                     top3.forEach((item, index) => {
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
                         top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ff4444;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
-                    // Render Từ Top 4 trở xuống
                     const theRest = data.slice(3);
                     if (theRest.length === 0) {
                         restHtml = "<li style='color: #666;'>Chưa có thêm thành viên nào khác.</li>";
@@ -349,7 +368,6 @@
                         });
                     }
 
-                    // Tìm xem thiết bị này (token) đã lưu tên nào chưa để hiển thị ở khung dưới
                     const myToken = getDeviceToken();
                     const myRecord = data.find(x => x.token === myToken);
                     const userBox = document.getElementById('user-status-box');
@@ -405,6 +423,40 @@
         })
         .catch(err => {
             alert("Có lỗi khi lưu điểm lên Cloud!");
+        });
+    }
+
+    function clearLeaderboardData() {
+        const password = prompt("Nhập mật khẩu quản trị để xóa bảng xếp hạng:");
+        if (password === null) return; // Bấm Cancel
+        
+        if (password !== "123456kb") {
+            alert("Sai mật khẩu! Không thể xóa.");
+            return;
+        }
+
+        if (!confirm("Bạn có chắc chắn muốn xóa sạch toàn bộ điểm số trên bảng xếp hạng không?")) {
+            return;
+        }
+
+        alert("Đang yêu cầu xóa dữ liệu trên hệ thống...");
+
+        const payload = {
+            action: "clear",
+            password: password
+        };
+
+        fetch(GOOGLE_API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert("Đã xóa sạch bảng xếp hạng thành công! 🧹");
+            loadLeaderboard();
+        })
+        .catch(err => {
+            alert("Có lỗi xảy ra khi xóa dữ liệu!");
         });
     }
 </script>
