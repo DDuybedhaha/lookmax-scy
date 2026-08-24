@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Looksmax AI - PSL Biometric Rating</title>
+    <title>PSL Authentic Biometric Rating System</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -15,15 +15,16 @@
             font-family: 'Segoe UI', Arial, sans-serif;
             text-align: center;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
-        h1 { margin-bottom: 5px; color: #f4f4f4; }
-        p { color: #888; font-size: 14px; margin-bottom: 15px; }
+        h1 { font-size: 20px; margin-bottom: 5px; color: #f4f4f4; }
+        p { color: #888; font-size: 13px; margin-bottom: 15px; }
 
         .display-container {
             position: relative;
-            width: 640px;
-            height: 480px;
+            width: 100%;
+            max-width: 640px;
+            aspect-ratio: 4 / 3;
             margin: 0 auto;
             border-radius: 12px;
             overflow: hidden;
@@ -47,31 +48,30 @@
             z-index: 5;
         }
 
-        /* HUD phong cách App Store Looksmax */
         #hud-overlay {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(15, 15, 22, 0.9);
+            top: 8px;
+            left: 8px;
+            background: rgba(15, 15, 22, 0.88);
             backdrop-filter: blur(8px);
             color: #ffffff;
-            padding: 12px 16px;
-            border-radius: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            font-size: 12px;
+            font-size: 10px;
             z-index: 10;
             text-align: left;
-            line-height: 1.6;
+            line-height: 1.4;
             pointer-events: none;
-            width: 230px;
+            width: 205px;
         }
 
         .hud-title {
             font-weight: bold;
             color: #f63366;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 3px;
+            padding-bottom: 2px;
         }
 
         #scan-overlay {
@@ -95,20 +95,20 @@
             pointer-events: auto;
         }
         .scan-box {
-            width: 80%;
-            max-width: 320px;
+            width: 85%;
+            max-width: 300px;
             background: rgba(20, 20, 28, 0.95);
             border: 1px solid #444;
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.9);
             text-align: center;
         }
         .scan-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #f63366;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             letter-spacing: 1px;
         }
         .progress-track {
@@ -126,7 +126,7 @@
             transition: width 0.05s linear;
         }
         .progress-text {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #fff;
         }
@@ -138,11 +138,11 @@
             transform: translateX(-50%) translateY(100px);
             background: rgba(20, 20, 25, 0.95);
             color: #fff;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 8px;
             border: 1px solid #444;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            font-size: 14px;
+            font-size: 13px;
             z-index: 1000;
             transition: transform 0.3s ease, opacity 0.3s ease;
             opacity: 0;
@@ -154,15 +154,16 @@
         }
 
         .controls-row {
-            margin-top: 15px;
+            margin-top: 12px;
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn-action {
-            padding: 12px 24px;
-            font-size: 15px;
+            padding: 10px 18px;
+            font-size: 14px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -175,6 +176,18 @@
         .btn-capture { background: #f63366; color: #fff; }
         .btn-capture:hover { background: #d02955; }
         .btn-capture:disabled { background: #555; color: #888; cursor: not-allowed; }
+
+        .panel-container {
+            margin: 15px auto; 
+            background: #111; 
+            padding: 12px; 
+            border-radius: 10px; 
+            width: 100%;
+            max-width: 640px; 
+            color: white; 
+            font-family: sans-serif; 
+            text-align: left;
+        }
 
         .btn-save {
             padding: 8px 10px;
@@ -222,8 +235,8 @@
 </head>
 <body>
 
-    <h1>Looksmax AI - PSL Biometric Rating</h1>
-    <p>Hệ thống quét khuôn mặt chuẩn phong cách App Store</p>
+    <h1>PSL Biometric Rating System</h1>
+    <p>Hệ thống đo lường nhân trắc học nguyên bản & khắt khe</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -231,18 +244,18 @@
         <canvas id="freeze_canvas" width="640" height="480"></canvas>
         
         <div id="hud-overlay">
-            <div class="hud-title">⚡ LOOKSMAX AI ANALYZER</div>
-            <div><b>OVERALL:</b> <span id="hud-score" style="color: #f63366; font-size: 14px;">--</span>/10</div>
+            <div class="hud-title">⚡ MESH ANALYZER</div>
+            <div><b>OVERALL:</b> <span id="hud-score" style="color: #f63366; font-size: 13px;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
-            <div><b>Jawline:</b> <span id="hud-jaw" style="color: #fff;">--</span></div>
+            <div><b>Gonial Angle:</b> <span id="hud-gonial" style="color: #fff;">--</span></div>
+            <div><b>Vertical 1/3:</b> <span id="hud-thirds" style="color: #fff;">--</span></div>
+            <div><b>Canthal Tilt:</b> <span id="hud-canthal" style="color: #fff;">--</span></div>
             <div><b>Symmetry:</b> <span id="hud-sym" style="color: #fff;">--%</span></div>
-            <div><b>Eye Area:</b> <span id="hud-eye" style="color: #fff;">--</span></div>
-            <div><b>Harmony:</b> <span id="hud-ratio" style="color: #fff;">--</span></div>
         </div>
 
         <div id="scan-overlay">
             <div class="scan-box">
-                <div class="scan-title">🔍 AI SCANNING MESH...</div>
+                <div class="scan-title">🔍 SCANNING MESH...</div>
                 <div class="progress-track">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
@@ -258,29 +271,29 @@
         <button id="btn-scan-action" class="btn-action btn-capture" onclick="startFreezeScan()">📸 2. Quét & Chấm Điểm</button>
     </div>
 
-    <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 360px; color: white; font-family: sans-serif; text-align: left;">
-        <h3 style="margin-top: 0; text-align: center;">🏆 Bảng Xếp Hạng Cloud</h3>
+    <div class="panel-container">
+        <h3 style="margin-top: 0; text-align: center; font-size: 16px;">🏆 Bảng Xếp Hạng Cloud</h3>
         
         <div style="margin-bottom: 12px; display: flex;">
-            <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15" style="padding: 8px; border-radius: 5px; border: none; width: 70%; margin-right: 5px;">
+            <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15" style="padding: 8px; border-radius: 5px; border: none; width: 70%; margin-right: 5px; font-size: 14px;">
             <button type="button" onclick="saveGlobalScore()" id="btn-save-action" class="btn-save">Lưu</button>
         </div>
 
         <div style="font-size: 13px; font-weight: bold; color: #f63366; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
-        <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 14px;">
+        <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 13px;">
             <li>Đang tải...</li>
         </ul>
 
         <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
 
         <div style="font-size: 13px; font-weight: bold; color: #888; margin-bottom: 5px;">📜 Các vị trí khác:</div>
-        <ul id="rest-list" class="leaderboard-scroll" style="font-size: 13px;">
+        <ul id="rest-list" class="leaderboard-scroll" style="font-size: 12px;">
             <li>Đang tải...</li>
         </ul>
 
         <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
 
-        <div id="user-status-box" style="font-size: 13px; background: #1a1b22; padding: 8px; border-radius: 6px; text-align: center; margin-bottom: 10px;">
+        <div id="user-status-box" style="font-size: 12px; background: #1a1b22; padding: 8px; border-radius: 6px; text-align: center; margin-bottom: 10px;">
             Trạng thái của bạn: <b>Chưa xác định</b>
         </div>
 
@@ -318,13 +331,13 @@
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
     }
 
-    function getAppStoreRank(score) {
-        if (score >= 8.0) return "Apex / Godtier ⚡";
-        if (score >= 7.0) return "Chad / Model 🔥";
-        if (score >= 6.0) return "High Tier ✨";
-        if (score >= 5.0) return "Mid Tier Normal";
-        if (score >= 4.0) return "Low Tier Normal";
-        return "Sub-five 📉";
+    function getPSLRank(score) {
+        if (score >= 7.5) return "Godtier / Apex ⚡";
+        if (score >= 6.5) return "Chad / Model 🔥";
+        if (score >= 5.5) return "Chadlite ✨";
+        if (score >= 4.5) return "HTN (High-Tier Normal)";
+        if (score >= 3.5) return "MTN (Mid-Tier Normal)";
+        return "Sub-five / LTN 📉";
     }
 
     async function initCamera() {
@@ -357,15 +370,12 @@
             
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 latestLandmarks = results.multiFaceLandmarks[0];
-                // Vẽ khung lưới công nghệ phong cách app store lên mặt khi bắt được
                 canvasCtx.strokeStyle = 'rgba(246, 51, 102, 0.4)';
                 canvasCtx.lineWidth = 0.5;
                 for (let i = 0; i < latestLandmarks.length; i += 5) {
                     let p = latestLandmarks[i];
                     canvasCtx.strokeRect(p.x * canvasElement.width - 1, p.y * canvasElement.height - 1, 2, 2);
                 }
-
-                document.getElementById('hud-status').innerText = "Đã nhận diện khuôn mặt ✅";
             } else {
                 latestLandmarks = null;
             }
@@ -436,57 +446,73 @@
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    processAppStoreStylePSL(capturedLandmarks);
+                    processAdvancedPSL(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    // --- THUẬT TOÁN MÔ PHỎNG APP STORE LOOKSMAX ---
-    function processAppStoreStylePSL(lm) {
+    // --- THUẬT TOÁN NHÂN TRẮC HỌC CHUYÊN SÂU PSL (LOOKSMAX STANDARD) ---
+    function processAdvancedPSL(lm) {
         if (!lm) return;
 
-        const leftEye = lm[33], rightEye = lm[263];
-        const noseBridge = lm[168];
-        const leftCheek = lm[234], rightCheek = lm[454];
+        // Các điểm mốc quan trọng chuẩn FaceMesh
+        const leftEyeInner = lm[133], leftEyeOuter = lm[33];
+        const rightEyeInner = lm[362], rightEyeOuter = lm[263];
         const leftJaw = lm[58], rightJaw = lm[288];
+        const chin = lm[152], noseTip = lm[1], forehead = lm[10];
 
-        const baseUnit = calculateDistance3D(leftEye, rightEye);
+        const baseUnit = calculateDistance3D(leftEyeInner, rightEyeInner);
 
-        // 1. Chỉ số Đối xứng (Symmetry)
-        const distLeft = calculateDistance3D(leftEye, noseBridge);
-        const distRight = calculateDistance3D(rightEye, noseBridge);
-        const symDiff = Math.abs(distLeft - distRight) / baseUnit;
-        const symmetry = Math.min(99.4, Math.max(70.0, (1 - symDiff * 3.5) * 100)).toFixed(1);
+        // 1. Canthal Tilt (Độ nghiêng khóe mắt)
+        const leftCanthalDeltaY = leftEyeOuter.y - leftEyeInner.y;
+        const leftCanthalAngle = Math.atan2(leftCanthalDeltaY, calculateDistance3D(leftEyeInner, leftEyeOuter)) * (180 / Math.PI);
+        let canthalText = leftCanthalAngle < -2 ? "Positive ⚡" : (leftCanthalAngle > 2 ? "Negative 📉" : "Neutral ⚖️");
 
-        // 2. Chỉ số Xương hàm (Jawline Score / 10)
+        // 2. Gonial Angle (Góc xương hàm - Chuẩn PSL đẹp từ 110-120 độ)
         const jawWidth = calculateDistance3D(leftJaw, rightJaw);
-        const cheekWidth = calculateDistance3D(leftCheek, rightCheek);
-        const jawRatio = jawWidth / cheekWidth;
-        let jawScore = Math.min(9.2, Math.max(4.5, jawRatio * 10.5)).toFixed(1);
+        const interEyeDist = calculateDistance3D(leftEyeInner, rightEyeInner);
+        const jawRatio = jawWidth / interEyeDist;
+        // Mô phỏng góc hàm dựa trên tỷ lệ xương hàm
+        let estimatedGonialAngle = Math.round(135 - (jawRatio - 1.6) * 25);
+        if (estimatedGonialAngle < 110) estimatedGonialAngle = 110;
+        if (estimatedGonialAngle > 132) estimatedGonialAngle = 132;
+        let gonialStr = `${estimatedGonialAngle}°`;
 
-        // 3. Chỉ số Vùng mắt (Eye Area / 10)
-        let eyeScore = (7.0 + (Math.random() * 1.5 - 0.7)).toFixed(1);
+        // 3. Vertical Thirds (Tỷ lệ 1/3 khuôn mặt: Trán - Mũi - Cằm)
+        const foreheadToNose = calculateDistance3D(forehead, noseTip);
+        const noseToChin = calculateDistance3D(noseTip, chin);
+        const thirdsDiff = Math.abs(foreheadToNose - noseToChin) / baseUnit;
+        let thirdsStr = thirdsDiff < 0.15 ? "Balanced (1/3)" : "Slightly Off";
 
-        // 4. Chỉ số Tỷ lệ hài hòa khuôn mặt (Harmony / 10)
-        let harmonyScore = (6.8 + (Math.random() * 1.4 - 0.6)).toFixed(1);
+        // 4. Độ đối xứng tổng thể (Symmetry)
+        const distLeft = calculateDistance3D(leftEyeInner, noseTip);
+        const distRight = calculateDistance3D(rightEyeInner, noseTip);
+        const symDiff = Math.abs(distLeft - distRight) / baseUnit;
+        const symmetry = Math.min(99.0, Math.max(65.0, (1 - symDiff * 4.5) * 100)).toFixed(1);
 
-        // Tổng điểm Overall phong cách app store (thường dao động từ 5.5 đến 8.5)
-        let overall = (parseFloat(jawScore) * 0.3 + parseFloat(symmetry) / 12 * 0.3 + parseFloat(eyeScore) * 0.2 + parseFloat(harmonyScore) * 0.2).toFixed(1);
-        if (overall > 8.5) overall = "8.5";
-        if (overall < 4.5) overall = "4.8";
+        // Chấm điểm từng chỉ số
+        let gonialScore = estimatedGonialAngle <= 118 ? 7.2 : (estimatedGonialAngle <= 124 ? 6.0 : 4.5);
+        let canthalScore = leftCanthalAngle < -2 ? 6.8 : 5.0;
+        let harmonyScore = thirdsDiff < 0.15 ? 6.5 : 4.8;
+        let symScore = (parseFloat(symmetry) / 10);
 
-        const rankName = getAppStoreRank(parseFloat(overall));
+        // Tổng điểm PSL gốc khắt khe
+        let overall = (gonialScore * 0.3 + canthalScore * 0.25 + harmonyScore * 0.25 + symScore * 0.2).toFixed(1);
+        if (overall > 7.8) overall = "7.8";
+        if (overall < 3.2) overall = "3.5";
+
+        const rankName = getPSLRank(parseFloat(overall));
 
         // Đẩy lên HUD
         document.getElementById('hud-score').innerText = overall;
         document.getElementById('hud-rank').innerText = rankName;
-        document.getElementById('hud-jaw').innerText = `${jawScore}/10`;
+        document.getElementById('hud-gonial').innerText = gonialStr;
+        document.getElementById('hud-thirds').innerText = thirdsStr;
+        document.getElementById('hud-canthal').innerText = canthalText;
         document.getElementById('hud-sym').innerText = `${symmetry}%`;
-        document.getElementById('hud-eye').innerText = `${eyeScore}/10`;
-        document.getElementById('hud-ratio').innerText = `${harmonyScore}/10`;
 
-        showToast(`✨ Phân tích Looksmax hoàn tất! Điểm: ${overall}/10`);
+        showToast(`⚖️ Phân tích nhân trắc học PSL hoàn tất! Điểm: ${overall}/10 (${rankName})`);
     }
 
     function getDeviceToken() {
