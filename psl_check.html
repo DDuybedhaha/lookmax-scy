@@ -351,14 +351,17 @@
                     top3Html = "<li>Chưa có ai lên bảng vàng.</li>";
                     restHtml = "<li>Trống.</li>";
                 } else {
+                    // Sắp xếp điểm từ cao xuống thấp
                     data.sort((a, b) => b.score - a.score);
                     
+                    // Render Top 3
                     const top3 = data.slice(0, 3);
                     top3.forEach((item, index) => {
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
                         top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ff4444;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
+                    // Render Từ Top 4 trở xuống (lấy từ index 3 đến hết)
                     const theRest = data.slice(3);
                     if (theRest.length === 0) {
                         restHtml = "<li style='color: #666;'>Chưa có thêm thành viên nào khác.</li>";
@@ -368,11 +371,14 @@
                         });
                     }
 
+                    // Tìm xem thiết bị này đã lưu điểm chưa
                     const myToken = getDeviceToken();
-                    const myRecord = data.find(x => x.token === myToken);
+                    const myRecordIndex = data.findIndex(x => x.token === myToken);
                     const userBox = document.getElementById('user-status-box');
-                    if (myRecord) {
-                        userBox.innerHTML = `Vị trí của bạn: <b>#${data.indexOf(myRecord) + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ff4444;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
+                    
+                    if (myRecordIndex !== -1) {
+                        const myRecord = data[myRecordIndex];
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ff4444;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
                     } else {
                         userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
                     }
@@ -428,7 +434,7 @@
 
     function clearLeaderboardData() {
         const password = prompt("Nhập mật khẩu quản trị để xóa bảng xếp hạng:");
-        if (password === null) return; // Bấm Cancel
+        if (password === null) return; 
         
         if (password !== "123456kb") {
             alert("Sai mật khẩu! Không thể xóa.");
