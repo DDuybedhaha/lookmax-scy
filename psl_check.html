@@ -182,12 +182,11 @@
     </div>
 
 <script>
-    // Link API mới nhất đã được mã hóa chính xác
-    const _cfg = {
-        u: "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3NzL3MvQUtmeWNienBpRE1PQmE5dlA3dFVfcXV1NldFRFRjcnk1dVFnS2dwVHFXeENkYlZcV3FRTFJXMVhVTUhnNjB6VlM1U0cvZXhlYw==",
-        p: "MTIzNDU2a2I="
-    };
-    function getAPIUrl() { return atob(_cfg.u).replace('/macross/', '/macros/'); }
+    // Dùng trực tiếp URL chuẩn của bạn
+    function getAPIUrl() { 
+        return "https://script.google.com/macros/s/AKfycbyrlA5kFiDfKRT7ppGD-nFMAQCXB-6NGcTsXGO2BsHbU3yK1hxZtlnTSE_BKQK9AYBq/exec"; 
+    }
+    const _cfg = { p: "MTIzNDU2a2I=" };
     function getSecretPwd() { return atob(_cfg.p); }
 
     const videoElement = document.getElementById('webcam');
