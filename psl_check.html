@@ -554,12 +554,19 @@
                     top3Html = "<li>Chưa có ai lên bảng vàng.</li>";
                     restHtml = "<li>Trống.</li>";
                 } else {
-                    data.sort((a, b) => parseFloat(b.score) - parseFloat(a.score));
+                    // Sắp xếp giảm dần theo điểm số (ép kiểu Number an toàn tuyệt đối)
+                    data.sort((a, b) => {
+                        let scoreA = parseFloat(a.score) || 0;
+                        let scoreB = parseFloat(b.score) || 0;
+                        return scoreB - scoreA;
+                    });
                     
                     const top3 = data.slice(0, 3);
                     top3.forEach((item, index) => {
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
-                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #f63366;">${item.score}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
+                        let cleanScore = parseFloat(item.score);
+                        let displayScore = !isNaN(cleanScore) ? cleanScore.toFixed(1) : item.score;
+                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #f63366;">${displayScore}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
                     const theRest = data.slice(3);
@@ -567,7 +574,9 @@
                         restHtml = "<li style='color: #666;'>Chưa có thêm thành viên nào khác.</li>";
                     } else {
                         theRest.forEach((item, index) => {
-                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #f63366;">${item.score}</span> (${item.rank})</li>`;
+                            let cleanScore = parseFloat(item.score);
+                            let displayScore = !isNaN(cleanScore) ? cleanScore.toFixed(1) : item.score;
+                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #f63366;">${displayScore}</span> (${item.rank})</li>`;
                         });
                     }
 
@@ -577,7 +586,9 @@
                     
                     if (myRecordIndex !== -1) {
                         const myRecord = data[myRecordIndex];
-                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#f63366;">${myRecord.score}</span> - Rank: <b>${myRecord.rank}</b>`;
+                        let cleanMyScore = parseFloat(myRecord.score);
+                        let displayMyScore = !isNaN(cleanMyScore) ? cleanMyScore.toFixed(1) : myRecord.score;
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#f63366;">${displayMyScore}</span> - Rank: <b>${myRecord.rank}</b>`;
                     } else {
                         userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
                     }
@@ -600,7 +611,8 @@
         }
 
         const scoreText = document.getElementById('hud-score').innerText;
-        const currentScore = parseFloat(scoreText);
+        // Ép kiểu bắt buộc sang Number để tránh dính chuỗi ngày tháng ở Google Sheet
+        const currentScore = Number(parseFloat(scoreText).toFixed(1));
         const currentRank = document.getElementById('hud-rank').innerText;
         
         if (isNaN(currentScore)) {
