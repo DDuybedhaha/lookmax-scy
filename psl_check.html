@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSL Face Rating System - Snapshot Mode</title>
+    <title>PSL Face Rating System - Scale Independent</title>
     <!-- Thư viện MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -59,6 +59,29 @@
             pointer-events: none;
         }
 
+        /* Toast thông báo nổi thay thế alert */
+        #toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(20, 20, 25, 0.95);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            font-size: 14px;
+            z-index: 1000;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #toast-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
         .controls-row {
             margin-top: 15px;
             display: flex;
@@ -96,6 +119,10 @@
             background: #3e3e3e;
             color: #ffffff;
         }
+        .btn-save.success {
+            background: #28a745 !important;
+            color: white !important;
+        }
 
         .btn-danger {
             background: #ff4444;
@@ -129,23 +156,27 @@
 </head>
 <body>
 
-    <h1>PSL Face Rating System - Snapshot Mode</h1>
-    <p>Chấm điểm cấu trúc xương mặt thuần PSL - Nhấn "Chụp ảnh quét mặt" khi đã chuẩn bị xong</p>
+    <h1>PSL Face Rating System - Scale Independent</h1>
+    <p>Chấm điểm chuẩn xác không phụ thuộc vào việc đứng xa hay gần camera</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
         
         <div id="hud-overlay">
+            <div><b>STATUS:</b> <span id="hud-status" style="color: #ffaa00;">Chưa bật Camera</span></div>
             <div><b>PSL SCORE:</b> <span id="hud-score" style="color: #ff4444;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>SYM:</b> <span id="hud-sym" style="color: #fff;">--%</span> | <b>fWHR:</b> <span id="hud-fwhr" style="color: #fff;">--</span></div>
         </div>
     </div>
 
+    <!-- Khung thông báo Toast -->
+    <div id="toast-notification">Thông báo hệ thống</div>
+
     <div class="controls-row">
         <button class="btn-action btn-start" onclick="initCamera()">1. Bật Camera</button>
-        <button class="btn-action btn-capture" onclick="captureAndAnalyze()">📸 2. Chụp & Chấm Điểm</button>
+        <button class="btn-action btn-capture" onclick="captureAndAnalyze()">📸 2. Chụp & Chấm Điểm Chuẩn Hóa</button>
     </div>
 
     <div style="margin: 20px auto; background: #111; padding: 15px; border-radius: 10px; width: 360px; color: white; font-family: sans-serif; text-align: left;">
@@ -153,7 +184,7 @@
         
         <div style="margin-bottom: 12px; display: flex;">
             <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15" style="padding: 8px; border-radius: 5px; border: none; width: 70%; margin-right: 5px;">
-            <button type="button" onclick="saveGlobalScore()" class="btn-save">Lưu</button>
+            <button type="button" onclick="saveGlobalScore()" id="btn-save-action" class="btn-save">Lưu</button>
         </div>
 
         <div style="font-size: 13px; font-weight: bold; color: #ffaa00; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
@@ -192,10 +223,24 @@
 
     let cameraInstance = null;
     let faceMesh = null;
-    let latestLandmarks = null; // Lưu trữ khung xương mặt gần nhất khi chụp
+    let latestLandmarks = null; 
 
-    function calculateDistance(p1, p2) {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    // Hàm hiển thị thông báo mượt mà thay thế alert
+    function showToast(message, duration = 3000) {
+        const toast = document.getElementById('toast-notification');
+        toast.innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, duration);
+    }
+
+    function calculateDistance3D(p1, p2) {
+        return Math.sqrt(
+            Math.pow(p1.x - p2.x, 2) + 
+            Math.pow(p1.y - p2.y, 2) + 
+            Math.pow(p1.z - p2.z, 2)
+        );
     }
 
     function getPSLRank(score) {
@@ -208,7 +253,6 @@
         return "Sub-five";
     }
 
-    // Khởi tạo camera và model nền để lấy dữ liệu realtime nhưng KHÔNG ép render điểm liên tục
     async function initCamera() {
         canvasElement.width = 640;
         canvasElement.height = 480;
@@ -228,7 +272,6 @@
             minTrackingConfidence: 0.65
         });
 
-        // Chỉ lưu trữ landmarks ngầm qua mỗi khung hình
         faceMesh.onResults((results) => {
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -236,8 +279,12 @@
             
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 latestLandmarks = results.multiFaceLandmarks[0];
+                document.getElementById('hud-status').innerText = "Đã nhận diện khuôn mặt ✅";
+                document.getElementById('hud-status').style.color = "#44ff44";
             } else {
                 latestLandmarks = null;
+                document.getElementById('hud-status').innerText = "Không thấy mặt - Hãy nhìn thẳng camera";
+                document.getElementById('hud-status').style.color = "#ff4444";
             }
             canvasCtx.restore();
         });
@@ -253,21 +300,26 @@
         });
 
         cameraInstance.start().catch(err => {
-            alert("Vui lòng cấp quyền camera để chạy hệ thống!");
+            showToast("⚠️ Vui lòng cấp quyền camera để chạy hệ thống!");
             console.error(err);
         });
     }
 
-    // Nút bấm "Chụp & Chấm Điểm" thực hiện phân tích chính thức từ frame hiện tại
     function captureAndAnalyze() {
         if (!latestLandmarks) {
-            alert("Không tìm thấy khuôn mặt trong khung hình! Hãy căn chỉnh lại camera.");
+            showToast("⚠️ Không tìm thấy khuôn mặt! Hãy đưa mặt vào chính giữa.");
             return;
         }
 
         const lm = latestLandmarks;
 
-        // Vẽ hiệu ứng chấm điểm lên canvas
+        const leftEye3D = lm[33], rightEye3D = lm[263];
+        const zDiff = Math.abs(leftEye3D.z - rightEye3D.z);
+        if (zDiff > 0.15) {
+            showToast("⚠️ Bạn đang xoay mặt quá nghiêng! Vui lòng đối diện thẳng.");
+            return;
+        }
+
         canvasCtx.fillStyle = '#ff4444';
         for (let point of lm) {
             const x = point.x * canvasElement.width;
@@ -283,24 +335,26 @@
         const leftJaw = lm[58], rightJaw = lm[288];
         const upperLip = lm[13];
 
-        const eyeDistance = calculateDistance(leftEye, rightEye);
-        if (eyeDistance === 0) return;
+        const baseUnit = calculateDistance3D(leftEye, rightEye);
+        if (baseUnit === 0) return;
 
-        const eyeDiff = Math.abs(leftEye.y - rightEye.y) / eyeDistance;
-        const cheekDiff = Math.abs(leftCheek.y - rightCheek.y) / eyeDistance;
-        const symmetryFactor = 1 - ((eyeDiff + cheekDiff) * 3.0);
-        const currentSym = Math.min(99.9, Math.max(30.0, symmetryFactor * 100));
+        const noseBridge = lm[168];
+        const distLeftToCenter = calculateDistance3D(leftEye, noseBridge);
+        const distRightToCenter = calculateDistance3D(rightEye, noseBridge);
+        const symDiff3D = Math.abs(distLeftToCenter - distRightToCenter) / baseUnit;
+        const currentSym = Math.min(99.9, Math.max(30.0, (1 - symDiff3D * 3.0) * 100));
 
-        const midFaceHeight = calculateDistance(eyebrow, upperLip);
-        const cheekWidth = calculateDistance(leftCheek, rightCheek);
-        let rawFWHR = midFaceHeight > 0 ? (cheekWidth / midFaceHeight) : 1.70;
-        const currentFWHR = rawFWHR * 1.35; 
+        const midFaceHeight3D = calculateDistance3D(eyebrow, upperLip);
+        const cheekWidth3D = calculateDistance3D(leftCheek, rightCheek);
+        let rawFWHR = midFaceHeight3D > 0 ? (cheekWidth3D / midFaceHeight3D) : 1.70;
+        const currentFWHR = rawFWHR * 1.15; 
 
-        const midHeight = calculateDistance(eyebrow, noseBottom) / eyeDistance;
-        const lowHeight = calculateDistance(noseBottom, chin) / eyeDistance;
-        const thirdRatioDiff = Math.abs(midHeight - lowHeight);
-        const jawWidth = calculateDistance(leftJaw, rightJaw);
-        const jawRatio = jawWidth / cheekWidth;
+        const midHeightRatio = calculateDistance3D(eyebrow, noseBottom) / baseUnit;
+        const lowHeightRatio = calculateDistance3D(noseBottom, chin) / baseUnit;
+        const thirdRatioDiff = Math.abs(midHeightRatio - lowHeightRatio);
+
+        const jawWidth3D = calculateDistance3D(leftJaw, rightJaw);
+        const jawRatio = jawWidth3D / cheekWidth3D;
 
         let pslScore = 4.2; 
         
@@ -313,7 +367,7 @@
             pslScore -= Math.abs(currentFWHR - 1.75) * 0.9;
         }
 
-        if (thirdRatioDiff < 0.12) pslScore += 0.4; 
+        if (thirdRatioDiff < 0.15) pslScore += 0.4; 
         else pslScore -= thirdRatioDiff * 1.5;
 
         if (jawRatio >= 0.68) pslScore += 0.5; 
@@ -331,7 +385,7 @@
         document.getElementById('hud-sym').innerText = `${finalSym}%`;
         document.getElementById('hud-fwhr').innerText = finalFWHR;
 
-        alert(`Chụp thành công! Điểm PSL của bạn là: ${finalOverall} (${rankName})`);
+        showToast(`✨ Chấm điểm hoàn tất! Điểm PSL: ${finalOverall} (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -343,7 +397,14 @@
         return token;
     }
 
-    window.onload = loadLeaderboard;
+    window.onload = function() {
+        loadLeaderboard();
+        // Tự động điền lại tên cũ nếu đã lưu trước đó
+        const savedName = localStorage.getItem('psl_player_name');
+        if (savedName) {
+            document.getElementById('player-name').value = savedName;
+        }
+    };
 
     function loadLeaderboard() {
         fetch(getAPIUrl())
@@ -397,7 +458,7 @@
     function saveGlobalScore() {
         const nameInput = document.getElementById('player-name').value.trim();
         if (!nameInput) {
-            alert("Vui lòng nhập tên của bạn!");
+            showToast("⚠️ Vui lòng nhập tên của bạn!");
             return;
         }
 
@@ -405,9 +466,15 @@
         const currentRank = document.getElementById('hud-rank').innerText;
         
         if (isNaN(currentScore)) {
-            alert("Vui lòng chụp ảnh quét mặt trước khi lưu điểm!");
+            showToast("⚠️ Vui lòng chụp ảnh quét mặt trước khi lưu điểm!");
             return;
         }
+
+        // Lưu tên lại để lần sau tự điền
+        localStorage.setItem('psl_player_name', nameInput);
+
+        const saveBtn = document.getElementById('btn-save-action');
+        saveBtn.innerText = "Đang lưu...";
 
         const payload = {
             token: getDeviceToken(),
@@ -416,20 +483,26 @@
             rank: currentRank
         };
 
-        alert("Đang gửi điểm lên Cloud...");
-
         fetch(getAPIUrl(), {
             method: "POST",
             body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(result => {
-            alert(`Thành công! Đã cập nhật tên "${nameInput}" lên hệ thống. 🎉`);
-            document.getElementById('player-name').value = "";
+            saveBtn.innerText = "Đã lưu!";
+            saveBtn.classList.add('success');
+            showToast(`🎉 Đã cập nhật thành công tên "${nameInput}" lên hệ thống!`);
+            
+            setTimeout(() => {
+                saveBtn.innerText = "Lưu";
+                saveBtn.classList.remove('success');
+            }, 2500);
+
             loadLeaderboard();
         })
         .catch(err => {
-            alert("Có lỗi khi lưu điểm lên Cloud!");
+            saveBtn.innerText = "Lưu";
+            showToast("❌ Có lỗi khi lưu điểm lên Cloud!");
         });
     }
 
@@ -438,15 +511,15 @@
         if (password === null) return; 
         
         if (password !== getSecretPwd()) {
-            alert("Sai mật khẩu! Không thể xóa.");
+            showToast("❌ Sai mật khẩu! Không thể xóa.");
             return;
         }
 
-        if (!confirm("Bạn có chắc chắn muốn xóa sạch toàn bộ điểm số trên bảng xếp hạng không?")) {
+        if (!confirm("Bạn có chắc chắn muốn xóa sạch bảng xếp hạng không?")) {
             return;
         }
 
-        alert("Đang yêu cầu xóa dữ liệu trên hệ thống...");
+        showToast("🧹 Đang xóa dữ liệu trên hệ thống...");
 
         const payload = {
             action: "clear",
@@ -459,11 +532,11 @@
         })
         .then(response => response.json())
         .then(result => {
-            alert("Đã xóa sạch bảng xếp hạng thành công! 🧹");
+            showToast("✅ Đã xóa sạch bảng xếp hạng thành công!");
             loadLeaderboard();
         })
         .catch(err => {
-            alert("Có lỗi xảy ra khi xóa dữ liệu!");
+            showToast("❌ Có lỗi xảy ra khi xóa dữ liệu!");
         });
     }
 </script>
