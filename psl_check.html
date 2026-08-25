@@ -52,7 +52,7 @@
             background: #12131a;
         }
 
-        video, canvas#snapshot-canvas {
+        video {
             display: block;
             width: 100%;
             height: auto;
@@ -61,12 +61,21 @@
             object-fit: cover;
         }
 
-        canvas#snapshot-canvas {
+        canvas#snapshot-canvas, canvas#mesh-canvas {
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
             display: none;
             z-index: 5;
+            object-fit: cover;
+            transform: scaleX(-1); /* Lật gương canvas để khớp với video */
+        }
+
+        canvas#mesh-canvas {
+            z-index: 8;
+            pointer-events: none;
         }
 
         /* Hiệu ứng lưới Hologram & Tia quét Laser */
@@ -197,7 +206,6 @@
             font-size: 11px;
         }
 
-        /* Thanh mini progress trong từng chỉ số */
         .mini-progress-track {
             width: 100%;
             height: 3px;
@@ -213,7 +221,6 @@
             transition: width 0.8s ease;
         }
 
-        /* Nút bấm hành động */
         .action-panel {
             margin-top: 12px;
             width: 100%;
@@ -315,12 +322,13 @@
             <div id="scan-progress" class="scan-progress-bar"></div>
         </div>
 
-        <!-- Hiệu ứng quét lưới & laser -->
+        <!-- Hiệu ứng quét lưới, laser và chấm mesh khuôn mặt -->
         <div id="scan-overlay" class="scan-overlay"></div>
         <div id="laser-line" class="laser-line"></div>
 
         <video id="webcam" autoplay playsinline muted></video>
         <canvas id="snapshot-canvas"></canvas>
+        <canvas id="mesh-canvas"></canvas>
     </div>
 
     <div class="hud-panel">
@@ -366,6 +374,9 @@
         const videoElement = document.getElementById('webcam');
         const snapshotCanvas = document.getElementById('snapshot-canvas');
         const snapshotCtx = snapshotCanvas.getContext('2d');
+        const meshCanvas = document.getElementById('mesh-canvas');
+        const meshCtx = meshCanvas.getContext('2d');
+
         let latestLandmarks = null;
         let isCaptured = false;
 
@@ -394,6 +405,27 @@
             return "Raw Sub5 ⚠️";
         }
 
+        // Vẽ các chấm định vị khuôn mặt (Face Mesh Dots) lên canvas
+        function drawFaceMeshDots(lm) {
+            if (!lm) return;
+            meshCanvas.width = videoElement.videoWidth || 640;
+            meshCanvas.height = videoElement.videoHeight || 480;
+            meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+
+            meshCtx.fillStyle = '#ff4757'; // Màu đỏ cam công nghệ
+            meshCtx.strokeStyle = 'rgba(255, 71, 87, 0.3)';
+            meshCtx.lineWidth = 0.5;
+
+            // Vẽ các điểm mốc chính trên mặt
+            for (let i = 0; i < lm.length; i += 3) { // Lấy cách điệu để đỡ nặng web nhưng vẫn đủ nét
+                let x = lm[i].x * meshCanvas.width;
+                let y = lm[i].y * meshCanvas.height;
+                meshCtx.beginPath();
+                meshCtx.arc(x, y, 1.2, 0, 2 * Math.PI);
+                meshCtx.fill();
+            }
+        }
+
         function captureAndFreeze() {
             if (!latestLandmarks) {
                 showToast("⚠️ Chưa nhận diện được khuôn mặt! Hãy canh lại camera.");
@@ -408,6 +440,10 @@
             snapshotCtx.drawImage(videoElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
             snapshotCanvas.style.display = 'block';
 
+            // Hiển thị các chấm lưới tọa độ khuôn mặt lên ảnh chụp
+            drawFaceMeshDots(latestLandmarks);
+            meshCanvas.style.display = 'block';
+
             // Bật hiệu ứng quét laser và lưới hologram
             document.getElementById('scan-overlay').style.display = 'block';
             document.getElementById('laser-line').style.display = 'block';
@@ -418,7 +454,6 @@
             let progress = 0;
             const progressBar = document.getElementById('scan-progress');
 
-            // Kéo dài thời gian quét lên ~2.8 giây (35ms * 80 bước) để tạo cảm giác chuyên nghiệp
             let interval = setInterval(() => {
                 progress += 1.25;
                 progressBar.style.width = progress + '%';
@@ -427,7 +462,7 @@
                 if (progress >= 100) {
                     clearInterval(interval);
                     
-                    // Tắt hiệu ứng quét
+                    // Tắt hiệu ứng quét laser nhưng giữ lại các chấm mesh định vị cho ngầu
                     document.getElementById('scan-overlay').style.display = 'none';
                     document.getElementById('laser-line').style.display = 'none';
 
@@ -444,6 +479,7 @@
         function resetScanner() {
             isCaptured = false;
             snapshotCanvas.style.display = 'none';
+            meshCanvas.style.display = 'none';
             document.getElementById('scan-progress').style.width = '0%';
             document.getElementById('hud-score').innerText = '--';
             document.getElementById('hud-rank').innerText = 'Hãy tạo dáng và bấm chụp...';
@@ -452,7 +488,6 @@
             document.getElementById('hud-midface').innerText = '--';
             document.getElementById('hud-dimorph').innerText = '--';
 
-            // Reset các thanh progress nhỏ
             document.getElementById('bar-canthal').style.width = '0%';
             document.getElementById('bar-jaw').style.width = '0%';
             document.getElementById('bar-midface').style.width = '0%';
@@ -465,13 +500,11 @@
         function processHardcorePSL(lm) {
             if (!lm) return;
 
-            // 1. Kiểm tra tư thế
             const leftEye = lm[33];
             const rightEye = lm[362];
             const eyeLevelDiff = Math.abs(leftEye.y - rightEye.y);
             let posturePenalty = eyeLevelDiff > 0.03 ? 0.5 : 1.0;
 
-            // 2. Canthal Tilt
             const leftOuterY = lm[133].y;
             const leftInnerY = lm[33].y;
             const leftTiltDiff = leftInnerY - leftOuterY; 
@@ -482,7 +515,6 @@
             else if (leftTiltDiff > 0.002) canthalScore = 0.4;
             else canthalScore = 0.2; 
 
-            // 3. Jawline Ratio
             const bizygomaticWidth = calculateDistance3D(lm[234], lm[454]);
             const jawWidth = calculateDistance3D(lm[172], lm[397]);
             const jawToBizygomatic = jawWidth / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
@@ -498,7 +530,6 @@
                 jawScore = 0.2; 
             }
 
-            // 4. Midface
             const browCenter = lm[9];
             const mouthCenter = lm[13];
             const faceWidth = bizygomaticWidth;
@@ -519,7 +550,6 @@
             const finalScore = rawScore.toFixed(1);
             const rankName = getHardcorePSLRank(parseFloat(finalScore));
 
-            // Hiển thị kết quả lên giao diện kèm cập nhật thanh progress bar trực quan
             document.getElementById('hud-score').innerText = String(finalScore).replace('.', ',') + " / 10";
             document.getElementById('hud-rank').innerText = rankName;
             
