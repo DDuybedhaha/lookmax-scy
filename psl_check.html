@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hardcore PSL Analyzer | Clean Edition</title>
+    <title>Hardcore PSL Analyzer | Elite Edition</title>
     <!-- Nhúng thư viện MediaPipe Face Mesh từ CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -52,7 +52,7 @@
             background: #12131a;
         }
 
-        video {
+        video, canvas#snapshot-canvas {
             display: block;
             width: 100%;
             height: auto;
@@ -61,8 +61,16 @@
             object-fit: cover;
         }
 
-        canvas {
-            display: none; /* Ẩn hoàn toàn chấm trên mặt */
+        canvas#output_canvas {
+            display: none;
+        }
+
+        canvas#snapshot-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            z-index: 5;
         }
 
         /* Thanh tiến trình quét */
@@ -82,35 +90,158 @@
             transition: width 0.1s linear;
         }
 
-        /* HUD gọn gàng ở đáy camera */
+        /* Nút bấm chụp/quét */
+        .action-panel {
+            margin-top: 15px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-scan {
+            flex: 1;
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 71, 87, 0.4);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-scan:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-scan:active {
+            transform: translateY(0);
+        }
+
+        .btn-scan:disabled {
+            background: #333446;
+            color: #66687a;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Overlay Đếm ngược */
+        #countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 11, 16, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            font-weight: 900;
+            color: #ffa502;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #countdown-overlay.show {
+            opacity: 1;
+        }
+
+        /* HUD Thông số hiện đại */
         .hud-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(13, 15, 23, 0.75);
-            backdrop-filter: blur(8px);
-            padding: 12px 16px;
+            background: rgba(13, 15, 23, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 13px;
+            z-index: 6;
+        }
+
+        .score-box {
+            grid-column: span 2;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.15), rgba(255, 165, 2, 0.15));
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(255, 71, 87, 0.1);
+        }
+
+        .score-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ff4757;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .score-value {
+            font-size: 26px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .score-rank {
+            font-size: 12px;
+            color: #ffa502;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .hud-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 13px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .hud-main-score {
-            font-size: 20px;
-            font-weight: 900;
-            color: #38bdf8;
+        .hud-item span:first-child {
+            color: #94a3b8;
+            font-size: 12px;
         }
 
-        .hud-sub-info {
-            font-size: 13px;
-            color: #ffa502;
+        .hud-item span:last-child {
             font-weight: 600;
+            color: #f1f5f9;
         }
 
-        /* Toast thông báo */
+        /* Toast thông báo góc trên */
         #toast {
             position: fixed;
             top: 20px;
@@ -135,7 +266,7 @@
     </style>
 </head>
 <body>
-
+    
     <div id="toast">Đang khởi tạo hệ thống...</div>
 
     <div>
@@ -148,20 +279,36 @@
             <div id="scan-progress" class="scan-progress-bar"></div>
         </div>
 
+        <div id="countdown-overlay">3</div>
+
         <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="snapshot-canvas"></canvas>
         <canvas id="output_canvas"></canvas>
         
         <div class="hud-overlay">
-            <div>
-                <span style="color: #94a3b8; font-size: 11px;">SCORE:</span>
-                <span class="hud-main-score" id="hud-score">--</span>
+            <div class="score-box">
+                <div class="score-title">Hardcore Overall Score</div>
+                <div class="score-value" id="hud-score">--</div>
+                <div class="score-rank" id="hud-rank">Hãy bấm nút để quét gương mặt...</div>
             </div>
-            <div class="hud-sub-info" id="hud-rank">Đang quét ổn định...</div>
+            <div class="hud-item"><span>Canthal Tilt</span> <span id="hud-canthal">--</span></div>
+            <div class="hud-item"><span>Jawline Ratio</span> <span id="hud-jaw">--</span></div>
+            <div class="hud-item"><span>Midface</span> <span id="hud-midface">--</span></div>
+            <div class="hud-item"><span>Tư thế</span> <span id="hud-dimorph">--</span></div>
         </div>
+    </div>
+
+    <div class="action-panel">
+        <button id="btn-capture" class="btn-scan" onclick="startScanProcess()">📸 Bắt đầu quét góc mặt</button>
+        <button id="btn-reset" class="btn-reset" onclick="resetScanner()" style="display: none;">Quét lại</button>
     </div>
 
     <script>
         const videoElement = document.getElementById('webcam');
+        const snapshotCanvas = document.getElementById('snapshot-canvas');
+        const snapshotCtx = snapshotCanvas.getContext('2d');
+        let isScanning = false;
+        let latestLandmarks = null;
 
         function showToast(message) {
             const toast = document.getElementById('toast');
@@ -181,65 +328,158 @@
         }
 
         function getHardcorePSLRank(score) {
-            if (score >= 6.5) return "Apex Elite 🏆";
-            if (score >= 5.5) return "High Normie 🔥";
+            if (score >= 6.5) return "Apex Elite / Chadlite 🏆";
+            if (score >= 5.5) return "High Tier Normie 🔥";
             if (score >= 4.5) return "Mid Normie ⚖️";
             if (score >= 3.5) return "Sub-Normie 📉";
             return "Raw Sub5 ⚠️";
         }
 
-        let scoreBuffer = [];
-        const BUFFER_LIMIT = 90; // Khoảng 3 giây quét
+        // Bắt đầu quy trình: Đếm ngược -> Quét -> Freeze
+        async function startScanProcess() {
+            const btnCapture = document.getElementById('btn-capture');
+            btnCapture.disabled = true;
+            
+            const countdownEl = document.getElementById('countdown-overlay');
+            let count = 3;
+            countdownEl.innerText = count;
+            countdownEl.classList.add('show');
+
+            let timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownEl.innerText = count;
+                } else {
+                    clearInterval(timer);
+                    countdownEl.classList.remove('show');
+                    runAnalysisScan();
+                }
+            }, 1000);
+        }
+
+        function runAnalysisScan() {
+            isScanning = true;
+            let progress = 0;
+            const progressBar = document.getElementById('scan-progress');
+            document.getElementById('hud-rank').innerText = "Đang phân tích chỉ số nhân trắc...";
+
+            let scanInterval = setInterval(() => {
+                progress += 2;
+                progressBar.style.width = progress + '%';
+                document.getElementById('hud-score').innerText = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(scanInterval);
+                    isScanning = false;
+                    freezeCameraAndDisplay();
+                }
+            }, 30);
+        }
+
+        function freezeCameraAndDisplay() {
+            // 1. Freeze khung hình video bằng cách vẽ hình hiện tại lên snapshotCanvas
+            snapshotCanvas.width = videoElement.videoWidth || 640;
+            snapshotCanvas.height = videoElement.videoHeight || 480;
+            
+            // Vẽ lật gương để khớp với video
+            snapshotCtx.save();
+            snapshotCtx.scale(-1, 1);
+            snapshotCtx.drawImage(videoElement, -snapshotCanvas.width, 0, snapshotCanvas.width, snapshotCanvas.height);
+            snapshotCtx.restore();
+            
+            snapshotCanvas.style.display = 'block';
+
+            // 2. Xử lý tính toán kết quả cuối cùng từ latestLandmarks
+            if (latestLandmarks) {
+                processHardcorePSL(latestLandmarks);
+            } else {
+                showToast("Không tìm thấy khuôn mặt! Hãy thử lại.");
+                resetScanner();
+                return;
+            }
+
+            // 3. Hiện nút Quét lại
+            document.getElementById('btn-capture').style.display = 'none';
+            document.getElementById('btn-reset').style.display = 'block';
+            showToast("✨ Đã đóng băng và hoàn tất phân tích!");
+        }
+
+        function resetScanner() {
+            snapshotCanvas.style.display = 'none';
+            document.getElementById('scan-progress').style.width = '0%';
+            document.getElementById('hud-score').innerText = '--';
+            document.getElementById('hud-rank').innerText = 'Hãy bấm nút để quét gương mặt...';
+            document.getElementById('hud-canthal').innerText = '--';
+            document.getElementById('hud-jaw').innerText = '--';
+            document.getElementById('hud-midface').innerText = '--';
+            document.getElementById('hud-dimorph').innerText = '--';
+
+            document.getElementById('btn-reset').style.display = 'none';
+            const btnCapture = document.getElementById('btn-capture');
+            btnCapture.style.display = 'block';
+            btnCapture.disabled = false;
+            latestLandmarks = null;
+        }
 
         function processHardcorePSL(lm) {
             if (!lm) return;
 
+            // 0. Kiểm tra góc nhìn thẳng
             const leftEye = lm[33];
             const rightEye = lm[362];
             const eyeLevelDiff = Math.abs(leftEye.y - rightEye.y);
             let posturePenalty = eyeLevelDiff > 0.03 ? 0.5 : 1.0;
 
+            // 1. Canthal Tilt
             const leftOuterY = lm[133].y;
             const leftInnerY = lm[33].y;
             const leftTiltDiff = leftInnerY - leftOuterY; 
-            let canthalScore = (leftTiltDiff > 0.010) ? 1.0 : (leftTiltDiff > 0.005 ? 0.5 : 0.2); 
+            let canthalScore = 0.1; 
+            if (leftTiltDiff > 0.010) canthalScore = 1.0; 
+            else if (leftTiltDiff > 0.005) canthalScore = 0.5; 
+            else canthalScore = 0.2; 
 
+            // 2. Jawline & Gonial Angle
             const bizygomaticWidth = calculateDistance3D(lm[234], lm[454]);
             const jawWidth = calculateDistance3D(lm[172], lm[397]);
             const jawToBizygomatic = jawWidth / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
-            let jawScore = (jawToBizygomatic >= 0.83 && jawToBizygomatic <= 0.88) ? 1.0 : (jawToBizygomatic >= 0.78 && jawToBizygomatic <= 0.92 ? 0.5 : 0.1);
+            
+            let jawScore = 0.2;
+            if (jawToBizygomatic >= 0.83 && jawToBizygomatic <= 0.88) {
+                jawScore = 1.0;
+            } else if (jawToBizygomatic >= 0.78 && jawToBizygomatic <= 0.92) {
+                jawScore = 0.5;
+            } else {
+                jawScore = 0.1; 
+            }
 
+            // 3. Midface Compactness
             const browCenter = lm[9];
             const mouthCenter = lm[13];
+            const faceWidth = bizygomaticWidth;
             const midfaceLength = calculateDistance3D(browCenter, mouthCenter);
-            const midfaceRatio = midfaceLength / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
-            let midfaceScore = (midfaceRatio < 1.08) ? 1.0 : (midfaceRatio < 1.15 ? 0.5 : 0.1);
+            const midfaceRatio = midfaceLength / (faceWidth > 0 ? faceWidth : 1);
+            
+            let midfaceScore = 0.2;
+            if (midfaceRatio < 1.08) midfaceScore = 1.0;
+            else if (midfaceRatio < 1.15) midfaceScore = 0.5;
+            else midfaceScore = 0.1;
 
             const compositeScore = (jawScore * 0.45 + canthalScore * 0.35 + midfaceScore * 0.20) * posturePenalty;
             
             let rawScore = 2.8 + compositeScore * 4.0;
             rawScore = Math.min(6.8, Math.max(3.0, rawScore));
 
-            scoreBuffer.push(rawScore);
-            if (scoreBuffer.length > BUFFER_LIMIT) {
-                scoreBuffer.shift();
-            }
+            const finalScore = rawScore.toFixed(1);
+            const rankName = getHardcorePSLRank(parseFloat(finalScore));
 
-            const progressPercent = Math.round((scoreBuffer.length / BUFFER_LIMIT) * 100);
-            document.getElementById('scan-progress').style.width = progressPercent + '%';
-
-            if (scoreBuffer.length < BUFFER_LIMIT) {
-                document.getElementById('hud-score').innerText = `${progressPercent}%`;
-                document.getElementById('hud-rank').innerText = "Đang giữ nguyên tư thế...";
-                return;
-            }
-
-            const avgScore = scoreBuffer.reduce((a, b) => a + b, 0) / scoreBuffer.length;
-            const finalScore = parseFloat(avgScore.toFixed(1));
-            const rankName = getHardcorePSLRank(finalScore);
-
-            document.getElementById('hud-score').innerText = finalScore.toFixed(1) + " / 10";
+            // Cập nhật lên HUD
+            document.getElementById('hud-score').innerText = String(finalScore).replace(',', '.') + " / 10";
             document.getElementById('hud-rank').innerText = rankName;
+            document.getElementById('hud-canthal').innerText = leftTiltDiff > 0.010 ? "Positive ⚡" : "Flat / Neutral";
+            document.getElementById('hud-jaw').innerText = jawToBizygomatic.toFixed(2) + (jawScore === 1.0 ? " (Ideal)" : " (Avg)");
+            document.getElementById('hud-midface').innerText = midfaceRatio < 1.08 ? "Compact 🔥" : "Extended";
+            document.getElementById('hud-dimorph').innerText = posturePenalty < 1.0 ? "⚠️ Lệch góc" : "Chuẩn trực diện ✨";
         }
 
         const faceMesh = new FaceMesh({
@@ -255,19 +495,17 @@
 
         faceMesh.onResults((results) => {
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                const landmarks = results.multiFaceLandmarks[0];
-                processHardcorePSL(landmarks);
-            } else {
-                scoreBuffer = [];
-                document.getElementById('scan-progress').style.width = '0%';
-                document.getElementById('hud-score').innerText = "--";
-                document.getElementById('hud-rank').innerText = "Đưa mặt vào khung...";
+                // Lưu liên tục khuôn mặt mới nhất để khi bấm quét sẽ lấy dữ liệu này
+                latestLandmarks = results.multiFaceLandmarks[0];
             }
         });
 
         const camera = new Camera(videoElement, {
             onFrame: async () => {
-                await faceMesh.send({ image: videoElement });
+                // Chỉ gửi sang faceMesh khi chưa freeze
+                if (snapshotCanvas.style.display !== 'block') {
+                    await faceMesh.send({ image: videoElement });
+                }
             },
             width: 640,
             height: 480
@@ -275,7 +513,7 @@
 
         camera.start()
             .then(() => {
-                showToast("⚡ Camera đã sẵn sàng");
+                showToast("⚡ Đã sẵn sàng. Hãy bấm nút để quét!");
             })
             .catch((err) => {
                 showToast("Lỗi mở Camera!");
