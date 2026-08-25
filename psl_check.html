@@ -67,7 +67,7 @@
 
         .hud-title {
             font-weight: bold;
-            color: #f63366;
+            color: #36b6f6;
             margin-bottom: 3px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 2px;
@@ -106,7 +106,7 @@
         .scan-title {
             font-size: 13px;
             font-weight: bold;
-            color: #f63366;
+            color: #36b6f6;
             margin-bottom: 10px;
             letter-spacing: 1px;
         }
@@ -121,7 +121,7 @@
         .progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #f63366, #ff9900);
+            background: linear-gradient(90deg, #36b6f6, #00ffcc);
             transition: width 0.05s linear;
         }
         .progress-text {
@@ -172,8 +172,8 @@
         .btn-start { background: #333; color: #fff; }
         .btn-start:hover { background: #444; }
         
-        .btn-capture { background: #f63366; color: #fff; }
-        .btn-capture:hover { background: #d02955; }
+        .btn-capture { background: #36b6f6; color: #000; }
+        .btn-capture:hover { background: #2895cc; }
         .btn-capture:disabled { background: #555; color: #888; cursor: not-allowed; }
 
         .panel-container {
@@ -235,7 +235,7 @@
 <body>
 
     <h1>PSL Authentic Biometric Rating System</h1>
-    <p>Hệ thống đo lường cấu trúc khuôn mặt chuẩn PSL (Looksmax Ultra-Strict)</p>
+    <p>Hệ thống đo lường cấu trúc khuôn mặt chuẩn PSL (Normal Strict - Cân Bằng)</p>
 
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -243,8 +243,8 @@
         <canvas id="freeze_canvas" width="480" height="360"></canvas>
         
         <div id="hud-overlay">
-            <div class="hud-title">⚡ ULTRA-STRICT PSL</div>
-            <div><b>OVERALL:</b> <span id="hud-score" style="color: #f63366; font-size: 13px;">--</span>/10</div>
+            <div class="hud-title">⚡ NORMAL STRICT PSL</div>
+            <div><b>OVERALL:</b> <span id="hud-score" style="color: #36b6f6; font-size: 13px;">--</span>/10</div>
             <div><b>RANK:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>Dimorphism:</b> <span id="hud-dimorph" style="color: #fff;">--</span></div>
             <div><b>Harmony:</b> <span id="hud-harmony" style="color: #fff;">--</span></div>
@@ -278,7 +278,7 @@
             <button type="button" onclick="saveGlobalScore()" id="btn-save-action" class="btn-save">Lưu</button>
         </div>
 
-        <div style="font-size: 13px; font-weight: bold; color: #f63366; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
+        <div style="font-size: 13px; font-weight: bold; color: #36b6f6; margin-bottom: 5px;">⭐ Top 3 Cao Thủ:</div>
         <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 13px;">
             <li>Đang tải...</li>
         </ul>
@@ -319,7 +319,7 @@
     let isScanning = false;
     let videoStream = null;
     let lastVideoTime = -1;
-    let frameCounter = 0; // Biến đếm khung hình để tối ưu hóa hiệu năng
+    let frameCounter = 0;
     window.isCameraStopped = false;
 
     function showToast(message, duration = 3000) {
@@ -334,11 +334,11 @@
     }
 
     function getPSLRank(score) {
-        if (score >= 6.8) return "Godtier / Apex ⚡";
-        if (score >= 6.0) return "Chad / Model 🔥";
-        if (score >= 5.2) return "Chadlite ✨";
-        if (score >= 4.5) return "HTN (High-Tier Normal)";
-        if (score >= 3.8) return "MTN (Mid-Tier Normal)";
+        if (score >= 7.5) return "Godtier / Apex ⚡";
+        if (score >= 6.5) return "Chad / Model 🔥";
+        if (score >= 5.5) return "Chadlite ✨";
+        if (score >= 4.8) return "HTN (High-Tier Normal)";
+        if (score >= 4.0) return "MTN (Mid-Tier Normal)";
         return "Sub-five / LTN 📉";
     }
 
@@ -374,9 +374,8 @@
                 
                 if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                     latestLandmarks = results.multiFaceLandmarks[0];
-                    canvasCtx.strokeStyle = 'rgba(246, 51, 102, 0.4)';
+                    canvasCtx.strokeStyle = 'rgba(54, 182, 246, 0.4)';
                     canvasCtx.lineWidth = 0.5;
-                    // Tăng bước nhảy lên 10 để giảm tải vẽ canvas giúp web mượt hơn
                     for (let i = 0; i < latestLandmarks.length; i += 10) {
                         let p = latestLandmarks[i];
                         canvasCtx.strokeRect(p.x * canvasElement.width - 1, p.y * canvasElement.height - 1, 2, 2);
@@ -389,7 +388,6 @@
         }
 
         try {
-            // Hạ độ phân giải camera xuống 480x360 để giảm tải cho phần cứng
             videoStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: { ideal: 480 }, height: { ideal: 360 }, facingMode: "user" },
                 audio: false
@@ -412,7 +410,6 @@
             if (videoElement.currentTime !== lastVideoTime) {
                 lastVideoTime = videoElement.currentTime;
                 
-                // Chỉ gọi AI xử lý cách nhau mỗi 2 khung hình để triệt tiêu hiện tượng giật lag
                 frameCounter++;
                 if (frameCounter % 2 === 0) {
                     await faceMesh.send({ image: videoElement });
@@ -471,56 +468,47 @@
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    processBalancedPSL(capturedLandmarks);
+                    processNormalPSL(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    function processBalancedPSL(lm) {
+    function processNormalPSL(lm) {
         if (!lm) return;
 
         const leftEyeInner = lm[133], leftEyeOuter = lm[33];
         const rightEyeInner = lm[362], rightEyeOuter = lm[263];
         const noseTip = lm[1], chin = lm[152];
         const leftCheek = lm[234], rightCheek = lm[454];
-        const forehead = lm[10];
 
         const leftDist = calculateDistance3D(leftEyeInner, noseTip);
         const rightDist = calculateDistance3D(rightEyeInner, noseTip);
         const symDiff = Math.abs(leftDist - rightDist) / ((leftDist + rightDist) / 2);
-        let symmetryPct = Math.max(40.0, Math.min(99.0, (1 - symDiff * 8.5) * 100));
+        
+        // Thang điểm cân bằng (Normal Strict): Dễ thở hơn, mức đối xứng cơ bản cho điểm cao hơn
+        let symmetryPct = Math.max(65.0, Math.min(99.5, (1 - symDiff * 5.0) * 100));
 
         const faceWidth = calculateDistance3D(leftCheek, rightCheek);
         const eyeSpan = calculateDistance3D(leftEyeInner, rightEyeInner);
         const structRatio = faceWidth / (eyeSpan > 0 ? eyeSpan : 1);
 
-        const upperFace = calculateDistance3D(forehead, noseTip);
-        const lowerFace = calculateDistance3D(noseTip, chin);
-        const verticalRatio = Math.abs(upperFace - lowerFace) / ((upperFace + lowerFace) / 2);
+        let baseScore = 5.0; // Xuất phát điểm ở mức Trung bình khá (MTN/HTN)
 
-        let baseScore = 3.6;
+        if (symmetryPct >= 92) baseScore += 1.4;
+        else if (symmetryPct >= 85) baseScore += 0.9;
+        else if (symmetryPct >= 75) baseScore += 0.4;
+        else baseScore -= 0.2;
 
-        if (symmetryPct >= 96) baseScore += 1.6;
-        else if (symmetryPct >= 90) baseScore += 1.0;
-        else if (symmetryPct >= 82) baseScore += 0.4;
-        else baseScore -= 0.4;
-
-        if (structRatio >= 3.0 && structRatio <= 3.2) {
-            baseScore += 0.8;
-        } else {
-            baseScore -= 0.3;
+        if (structRatio >= 2.8 && structRatio <= 3.4) {
+            baseScore += 0.7;
         }
 
-        if (verticalRatio > 0.12) {
-            baseScore -= 0.5;
-        }
+        let finalScore = Math.min(7.8, Math.max(4.5, baseScore)).toFixed(1);
 
-        let finalScore = Math.min(6.8, Math.max(3.2, baseScore)).toFixed(1);
-
-        let dimorphStr = structRatio >= 3.0 ? "Dimorphic ⚡" : "Sub-optimal Frame 📉";
-        let harmonyStr = symmetryPct >= 90 ? "High Symmetry ⚖️" : "Asymmetric Flaw ⚠️";
-        let eyeAreaStr = (calculateDistance3D(leftEyeOuter, leftEyeInner) > 0.14) ? "Compact 🔥" : "Standard / Wide";
+        let dimorphStr = structRatio >= 2.8 ? "Balanced Structure ⚡" : "Standard Frame ✨";
+        let harmonyStr = symmetryPct >= 85 ? "Good Harmony ⚖️" : "Average Proportions";
+        let eyeAreaStr = (calculateDistance3D(leftEyeOuter, leftEyeInner) > 0.12) ? "Attractive Eyes 🔥" : "Standard";
 
         const rankName = getPSLRank(parseFloat(finalScore));
 
@@ -531,7 +519,7 @@
         document.getElementById('hud-eyearea').innerText = eyeAreaStr;
         document.getElementById('hud-sym').innerText = `${symmetryPct.toFixed(1)}%`;
 
-        showToast(`🗿 Ultra-Strict PSL: ${finalScore}/10 (${rankName})`);
+        showToast(`✨ Normal Strict PSL: ${finalScore}/10 (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -573,7 +561,7 @@
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
                         let cleanScore = parseFloat(item.score);
                         let displayScore = !isNaN(cleanScore) ? cleanScore.toFixed(1) : item.score;
-                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #f63366;">${displayScore}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
+                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #36b6f6;">${displayScore}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
                     const theRest = data.slice(3);
@@ -583,7 +571,7 @@
                         theRest.forEach((item, index) => {
                             let cleanScore = parseFloat(item.score);
                             let displayScore = !isNaN(cleanScore) ? cleanScore.toFixed(1) : item.score;
-                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #f63366;">${displayScore}</span> (${item.rank})</li>`;
+                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #36b6f6;">${displayScore}</span> (${item.rank})</li>`;
                         });
                     }
 
@@ -595,7 +583,7 @@
                         const myRecord = data[myRecordIndex];
                         let cleanMyScore = parseFloat(myRecord.score);
                         let displayMyScore = !isNaN(cleanMyScore) ? cleanMyScore.toFixed(1) : myRecord.score;
-                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#f63366;">${displayMyScore}</span> - Rank: <b>${myRecord.rank}</b>`;
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#36b6f6;">${displayMyScore}</span> - Rank: <b>${myRecord.rank}</b>`;
                     } else {
                         userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
                     }
