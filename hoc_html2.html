@@ -23,7 +23,7 @@
             padding: 20px;
         }
 
-        /* Màn hình Login / Google Auth Hub */
+        /* Màn hình Nhập Tên / Đăng Ký Lần Đầu */
         #auth-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #090a0f; z-index: 5000;
@@ -36,51 +36,35 @@
         }
         .auth-logo { font-size: 42px; margin-bottom: 15px; }
         .auth-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 8px; }
-        .auth-desc { font-size: 12px; color: #94a3b8; margin-bottom: 30px; }
-        .btn-google {
-            width: 100%; background: #fff; color: #1e293b; border: none;
-            padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 4px 15px rgba(255,255,255,0.15); transition: transform 0.1s ease;
+        .auth-desc { font-size: 12px; color: #94a3b8; margin-bottom: 25px; }
+        .auth-input {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+            padding: 12px 14px; border-radius: 12px; color: #fff; font-size: 14px; text-align: center;
+            margin-bottom: 20px; outline: none;
         }
-        .btn-google:hover { background: #f1f5f9; transform: translateY(-1px); }
+        .btn-enter {
+            width: 100%; background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; border: none;
+            padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+        .btn-enter:hover { opacity: 0.95; }
 
         /* Top Navigation Bar */
         .top-nav {
-            width: 100%;
-            max-width: 1100px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background: #11131c;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 20px;
+            width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: #11131c; border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 20px;
         }
         .nav-left, .nav-right { display: flex; align-items: center; gap: 12px; }
         .badge-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #e2e8f0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #e2e8f0;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
         .season-banner {
-            background: linear-gradient(135deg, #d97706, #f59e0b);
-            color: #000;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-weight: 900;
-            font-size: 13px;
-            letter-spacing: 1px;
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+            background: linear-gradient(135deg, #d97706, #f59e0b); color: #000;
+            padding: 6px 20px; border-radius: 20px; font-weight: 900; font-size: 13px;
+            letter-spacing: 1px; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
         }
         .avatar-circle {
             width: 36px; height: 36px; border-radius: 50%;
@@ -91,42 +75,25 @@
 
         /* Notice bar */
         .privacy-notice {
-            font-size: 11px;
-            color: #94a3b8;
-            text-align: center;
-            margin-bottom: 25px;
+            font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 25px;
         }
         .privacy-notice a { color: #f59e0b; text-decoration: underline; }
 
         /* Hub Dashboard Grid */
         #hub-screen {
-            width: 100%;
-            max-width: 1100px;
-            display: grid;
-            grid-template-columns: 260px 1fr 260px;
-            gap: 15px;
+            width: 100%; max-width: 1100px; display: grid; grid-template-columns: 260px 1fr 260px; gap: 15px;
         }
         .hub-card {
-            background: #12141f;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 20px;
-            padding: 25px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            transition: all 0.2s ease;
+            background: #12141f; border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px; padding: 25px 20px; display: flex; flex-direction: column;
+            align-items: center; text-align: center; position: relative;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); transition: all 0.2s ease;
         }
         .hub-card.clickable:hover {
-            border-color: rgba(168, 85, 247, 0.6);
-            transform: translateY(-2px);
-            cursor: pointer;
+            border-color: rgba(168, 85, 247, 0.6); transform: translateY(-2px); cursor: pointer;
         }
         .hub-card.center-arena {
-            grid-column: span 1;
-            background: linear-gradient(180deg, #161827 0%, #10121b 100%);
+            grid-column: span 1; background: linear-gradient(180deg, #161827 0%, #10121b 100%);
             border: 1px solid rgba(168, 85, 247, 0.3);
         }
         .hub-icon { font-size: 32px; margin-bottom: 12px; }
@@ -134,18 +101,15 @@
         .hub-desc { font-size: 11px; color: #94a3b8; margin-bottom: 20px; }
         
         .mode-tabs {
-            display: flex; gap: 8px; background: rgba(0,0,0,0.4);
-            padding: 4px; border-radius: 25px; width: 100%; margin-bottom: 20px;
+            display: flex; gap: 8px; background: rgba(0,0,0,0.4); padding: 4px; border-radius: 25px; width: 100%; margin-bottom: 20px;
         }
         .mode-tab {
-            flex: 1; padding: 8px; font-size: 12px; font-weight: 700;
-            border-radius: 20px; border: none; cursor: pointer; background: transparent; color: #94a3b8;
+            flex: 1; padding: 8px; font-size: 12px; font-weight: 700; border-radius: 20px; border: none; cursor: pointer; background: transparent; color: #94a3b8;
         }
         .mode-tab.active { background: #8b5cf6; color: #fff; }
 
         .player-stats-box {
-            width: 100%; background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
             padding: 15px; text-align: left; margin-bottom: 20px;
         }
         .stat-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
@@ -173,7 +137,7 @@
             font-size: 11px; color: #64748b; font-style: italic; padding: 15px 0; text-align: center;
         }
 
-        /* Chung cho các Modal (Customs & Shop) */
+        /* Modal Customs 1v1 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 11, 16, 0.85); backdrop-filter: blur(8px);
@@ -191,6 +155,11 @@
             padding: 10px 14px; border-radius: 8px; color: #fff; font-size: 14px; text-align: center;
             margin-bottom: 15px; outline: none;
         }
+        .custom-section {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06);
+            padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left;
+        }
+        .custom-section h4 { margin: 0 0 8px 0; font-size: 13px; color: #f59e0b; }
 
         /* Danh sách đồ trong Shop */
         .shop-items-grid {
@@ -216,7 +185,7 @@
         .arena-top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 12px; background: #12141f; padding: 10px 20px; border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
         .match-grid {
             display: grid; grid-template-columns: 1fr 50px 1fr; gap: 15px; width: 100%; align-items: center;
@@ -271,38 +240,46 @@
 
     <div id="toast">Sẵn sàng!</div>
 
-    <!-- Màn hình Đăng Nhập Google Hub -->
+    <!-- Màn hình Nhập Tên Lần Đầu (Lưu vào thiết bị tự động cho các lần sau) -->
     <div id="auth-screen">
         <div class="auth-card">
             <div class="auth-logo">🌐</div>
             <div class="auth-title">Omoggle Arena</div>
-            <div class="auth-desc">Đăng nhập tài khoản Google để tham gia đấu trường 1v1 trực tuyến và lưu lại Elo của bạn.</div>
-            <button class="btn-google" onclick="loginWithGoogle()">
-                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.19v3.15C3.17 21.36 7.23 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.19C.43 8.13 0 9.87 0 11.7s.43 3.57 1.19 5.1l4.08-2.56z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.17 2.64 1.19 6.6l4.08 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
-                Sign in with Google
-            </button>
+            <div class="auth-desc">Nhập tên nhân vật của bạn để bắt đầu tham gia đấu trường 1v1. Dữ liệu sẽ tự động lưu lại cho lần truy cập sau.</div>
+            <input type="text" id="username-input" class="auth-input" placeholder="Nhập tên của bạn...">
+            <button class="btn-enter" onclick="submitAuthName()">Vào Đấu Trường</button>
         </div>
     </div>
 
-    <!-- Modal tạo/nhập phòng Customs 1v1 -->
+    <!-- Modal Customs 1v1 -->
     <div id="custom-modal" class="modal-overlay">
         <div class="modal-box">
             <h3>⚔️ Customs 1v1 Room</h3>
-            <p>Tạo hoặc nhập mã phòng riêng để solo trực tiếp với bạn bè.</p>
-            <input type="text" id="custom-room-input" class="custom-input" placeholder="Nhập mã phòng tùy chỉnh...">
-            <button class="btn-start-match" onclick="joinCustomRoom()" style="margin-bottom: 10px;">Vào Phòng Custom</button>
+            <p>Tạo phòng mới hoặc nhập mã để solo trực tiếp với bạn bè.</p>
+            
+            <div class="custom-section">
+                <h4>1. Create Room (Tạo phòng)</h4>
+                <button class="btn-start-match" onclick="createCustomRoom()" style="padding: 10px; font-size: 12px;">Tạo Mã Phòng Ngẫu Nhiên</button>
+            </div>
+
+            <div class="custom-section">
+                <h4>2. Join Room (Nhập mã)</h4>
+                <input type="text" id="custom-room-input" class="custom-input" placeholder="Nhập mã phòng từ bạn bè..." style="margin-bottom: 10px;">
+                <button class="btn-start-match" onclick="joinCustomRoom()" style="padding: 10px; font-size: 12px; background: linear-gradient(135deg, #38bdf8, #0284c7);">Vào Phòng</button>
+            </div>
+
             <button onclick="closeCustomModal()" style="background:transparent; border:none; color:#94a3b8; font-size:12px; cursor:pointer;">Đóng</button>
         </div>
     </div>
 
-    <!-- Modal Cửa Hàng Profile (Shop Items) -->
+    <!-- Modal Cửa Hàng Profile -->
     <div id="shop-modal" class="modal-overlay">
         <div class="modal-box" style="max-width: 450px;">
             <h3>💎 Profile Cosmetics Shop</h3>
             <p>Dùng Gems để mua vật phẩm làm đẹp khung hồ sơ và danh hiệu của bạn.</p>
             
             <div style="margin-bottom: 12px; font-size: 13px; font-weight: 700; color: #f59e0b;">
-                Số dư hiện tại: <span id="shop-gems-display">91</span> Gems
+                Số dư hiện tại: <span id="shop-gems-display">0</span> Gems
             </div>
 
             <div class="shop-items-grid">
@@ -356,7 +333,7 @@
             <div class="hub-icon">💎</div>
             <div class="hub-title">Shop</div>
             <div class="hub-desc">Cosmetics, Bundles & Pro</div>
-            <div style="margin-top: auto; font-size: 12px; color: #f59e0b; font-weight: 700;">💎 <span id="hub-gems-text">91</span> Gems</div>
+            <div style="margin-top: auto; font-size: 12px; color: #f59e0b; font-weight: 700;">💎 <span id="hub-gems-text">0</span> Gems</div>
         </div>
 
         <!-- Arena Main Card -->
@@ -381,7 +358,7 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">PUBLIC APPEAL</span>
-                    <span class="stat-val">8.0 ⭐ (1)</span>
+                    <span class="stat-val">8.0 ⭐ (0)</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">WORLD RANKING</span>
@@ -389,11 +366,7 @@
                 </div>
             </div>
 
-            <div style="width: 100%; margin-bottom: 15px;">
-                <input type="text" id="room-id-input" value="omoggle-room-20elo" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:8px; color:#fff; text-align:center; font-size:13px; outline:none;" placeholder="Mã phòng đấu">
-            </div>
-
-            <button class="btn-start-match" onclick="startArenaMatch('public')">Bắt Đầu Trận Đấu (15s)</button>
+            <button class="btn-start-match" onclick="startArenaMatch()">Bắt Đầu Trận Đấu (15s)</button>
         </div>
 
         <!-- Hub Right Column: Customs & Leaderboard -->
@@ -402,7 +375,7 @@
             <div class="hub-card clickable" onclick="openCustomModal()" style="padding: 20px;">
                 <div class="hub-icon" style="font-size:26px; margin-bottom:8px;">🎮</div>
                 <div class="hub-title" style="font-size:14px;">Customs</div>
-                <div class="hub-desc" style="margin-bottom:0; font-size:10px;">Tạo & Nhập mã phòng 1v1</div>
+                <div class="hub-desc" style="margin-bottom:0; font-size:10px;">Create & Join Room</div>
             </div>
 
             <!-- Leaderboard List Elo -->
@@ -473,18 +446,30 @@
         const videoElement = document.getElementById('webcam');
         const remoteVideo = document.getElementById('remote-video');
         let latestLandmarks = null;
-        let currentElo = 400; 
-        let userGems = 91;
-        let winsCount = 0;
-        let lossesCount = 0;
-        let hasPlayedAtLeastOnce = false;
+        
+        // Khởi tạo thông tin người chơi từ bộ nhớ thiết bị (tự động nhận diện theo phiên đăng nhập/IP trình duyệt)
+        let userName = localStorage.getItem('omg_username') || "";
+        let currentElo = parseInt(localStorage.getItem('omg_elo')) || 400; 
+        let userGems = parseInt(localStorage.getItem('omg_gems')) || 0; 
+        let winsCount = parseInt(localStorage.getItem('omg_wins')) || 0;
+        let lossesCount = parseInt(localStorage.getItem('omg_losses')) || 0;
+        let hasPlayedAtLeastOnce = (winsCount > 0 || lossesCount > 0);
+
         let peer, myStream;
         let matchTimer = 15;
         let matchInterval = null;
         let isPlaying = false;
         let myScoresList = [];
         let ownedItems = [];
-        let userName = "AIOSIMA";
+        let activeRoomId = "omoggle-public-room";
+
+        // Kiểm tra nếu đã có tên lưu sẵn từ trước thì ẩn màn hình nhập tên đi ngay lập tức
+        window.addEventListener('DOMContentLoaded', () => {
+            if (userName) {
+                document.getElementById('auth-screen').style.display = 'none';
+                applyUserDataToUI();
+            }
+        });
 
         function showToast(message) {
             const toast = document.getElementById('toast');
@@ -493,22 +478,38 @@
             setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
 
-        /* Đăng nhập Google Giả Lập */
-        function loginWithGoogle() {
-            showToast("Đang xác thực tài khoản Google...");
-            setTimeout(() => {
-                userName = "Player_" + Math.floor(100 + Math.random() * 900);
-                
-                document.getElementById('profile-display-name').innerText = userName;
-                document.getElementById('arena-profile-name').innerText = userName;
-                document.getElementById('nav-user-avatar').innerText = userName.charAt(0);
+        /* Xử lý nhập tên lần đầu và lưu vào hệ thống thiết bị */
+        function submitAuthName() {
+            const inputVal = document.getElementById('username-input').value.trim();
+            if (!inputVal) {
+                showToast("Vui lòng nhập tên của bạn để tiếp tục!");
+                return;
+            }
+            userName = inputVal;
+            localStorage.setItem('omg_username', userName);
 
-                document.getElementById('auth-screen').style.display = 'none';
-                showToast("Đăng nhập thành công! Chào mừng " + userName);
-            }, 1000);
+            document.getElementById('auth-screen').style.display = 'none';
+            applyUserDataToUI();
+            showToast("Chào mừng quay trở lại, " + userName + "!");
         }
 
-        /* Cập nhật hiển thị bảng xếp hạng động */
+        /* Đồng bộ dữ liệu lên giao diện */
+        function applyUserDataToUI() {
+            document.getElementById('profile-display-name').innerText = userName;
+            document.getElementById('arena-profile-name').innerText = userName;
+            document.getElementById('nav-user-avatar').innerText = userName.charAt(0).toUpperCase();
+            document.getElementById('hub-gems-text').innerText = userGems;
+            document.getElementById('shop-gems-display').innerText = userGems;
+            document.getElementById('arena-elo-display').innerText = currentElo + " ELO";
+            document.getElementById('hub-elo-text').innerText = currentElo + " ELO";
+            document.getElementById('profile-record').innerText = `${winsCount}W - ${lossesCount}L`;
+            
+            if (hasPlayedAtLeastOnce) {
+                updateLeaderboardUI();
+            }
+        }
+
+        /* Cập nhật bảng xếp hạng động */
         function updateLeaderboardUI() {
             const container = document.getElementById('leaderboard-container');
             if (!hasPlayedAtLeastOnce) {
@@ -524,6 +525,14 @@
                 </div>
             `;
             document.getElementById('profile-rank').innerText = "#1";
+        }
+
+        /* Lưu trữ tự động tiến trình game vào localStorage */
+        function saveGameProgress() {
+            localStorage.setItem('omg_elo', currentElo);
+            localStorage.setItem('omg_gems', userGems);
+            localStorage.setItem('omg_wins', winsCount);
+            localStorage.setItem('omg_losses', lossesCount);
         }
 
         /* Quản lý Modal Shop Items */
@@ -546,6 +555,7 @@
 
             userGems -= price;
             ownedItems.push(itemId);
+            saveGameProgress();
             
             document.getElementById('hub-gems-text').innerText = userGems;
             document.getElementById('shop-gems-display').innerText = userGems;
@@ -553,45 +563,39 @@
             const btn = document.getElementById('btn-item-' + itemId);
             btn.innerText = "ĐÃ MUA";
             btn.classList.add('owned');
-
-            if (itemId === 1) {
-                document.getElementById('my-cam-box-style').style.borderColor = "#c084fc";
-                document.getElementById('my-cam-box-style').style.boxShadow = "0 0 25px rgba(168, 85, 247, 0.8)";
-                showToast("✨ Đã trang bị Khung Viền Neon Tím!");
-            } else if (itemId === 2) {
-                document.getElementById('my-sub-title-badge').innerText = "👑 Chads God";
-                showToast("👑 Đã trang bị danh hiệu Chads God!");
-            } else if (itemId === 3) {
-                showToast("🔥 Đã kích hoạt Hiệu ứng Lửa Cháy Vàng cho profile!");
-            }
+            showToast("✨ Mua vật phẩm thành công!");
         }
 
-        /* Xử lý Modal Customs 1v1 */
+        /* Quản lý Modal Customs (2 mục: Create & Join) */
         function openCustomModal() {
             document.getElementById('custom-modal').style.display = 'flex';
         }
         function closeCustomModal() {
             document.getElementById('custom-modal').style.display = 'none';
         }
+
+        function createCustomRoom() {
+            const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            activeRoomId = "custom-" + randomCode;
+            closeCustomModal();
+            showToast("Đã tạo phòng custom: " + randomCode);
+            startArenaMatch();
+        }
+
         function joinCustomRoom() {
             const code = document.getElementById('custom-room-input').value.trim();
             if (!code) {
-                showToast("Vui lòng nhập mã phòng custom!");
+                showToast("Vui lòng nhập mã phòng từ bạn bè!");
                 return;
             }
-            document.getElementById('room-id-input').value = "custom-" + code;
+            activeRoomId = "custom-" + code.toUpperCase();
             closeCustomModal();
-            showToast("Đã chọn phòng: custom-" + code);
-            startArenaMatch('custom');
+            showToast("Đang vào phòng: " + code);
+            startArenaMatch();
         }
 
-        async function startArenaMatch(type) {
-            const roomId = document.getElementById('room-id-input').value.trim();
-            if (!roomId) {
-                showToast("Vui lòng nhập mã phòng!");
-                return;
-            }
-
+        /* Bắt đầu trận đấu 1v1 */
+        async function startArenaMatch() {
             document.getElementById('hub-screen').style.display = 'none';
             document.getElementById('arena-screen').style.display = 'flex';
 
@@ -601,8 +605,8 @@
 
                 peer = new Peer();
                 peer.on('open', (id) => {
-                    showToast("🔗 Đã kết nối phòng: " + roomId);
-                    setupPeerConnection(roomId);
+                    showToast("🔗 Đã kết nối phòng đấu");
+                    setupPeerConnection(activeRoomId);
                 });
 
                 peer.on('call', (call) => {
@@ -687,13 +691,16 @@
             if (finalAvg >= opponentAvg) {
                 winsCount++;
                 currentElo += 20;
-                userGems += 10; 
+                userGems += 10; // Thắng được +10 Gems chuẩn luật
                 showToast(`🎉 THẮNG! Điểm TB: ${finalAvg} (+20 ELO, +10 Gems)`);
             } else {
                 lossesCount++;
                 currentElo = Math.max(100, currentElo - 20);
-                showToast(`😢 THUA! Điểm TB: ${finalAvg} (-20 ELO)`);
+                // Thua không được Gems nào
+                showToast(`😢 THUA! Điểm TB: ${finalAvg} (-20 ELO, 0 Gems)`);
             }
+
+            saveGameProgress();
 
             document.getElementById('hub-gems-text').innerText = userGems;
             document.getElementById('shop-gems-display').innerText = userGems;
@@ -701,8 +708,8 @@
             document.getElementById('hub-elo-text').innerText = currentElo + " ELO";
             document.getElementById('profile-record').innerText = `${winsCount}W - ${lossesCount}L`;
 
-            // Cập nhật lại bảng xếp hạng sau khi có kết quả trận đấu đầu tiên
             updateLeaderboardUI();
+            activeRoomId = "omoggle-public-room";
         }
 
         function leaveArena() {
@@ -710,6 +717,7 @@
             if (myStream) myStream.getTracks().forEach(track => track.stop());
             if (peer) peer.destroy();
             isPlaying = false;
+            activeRoomId = "omoggle-public-room";
 
             document.getElementById('arena-screen').style.display = 'none';
             document.getElementById('hub-screen').style.display = 'grid';
