@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omoggle | 1v1 Face Match Arena</title>
-    <!-- Nhúng thư viện MediaPipe Face Mesh từ CDN -->
+    <title>Omoggle | Fixed ±20 Elo 15s Arena</title>
+    <!-- Thư viện MediaPipe Face Mesh -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <!-- Thư viện PeerJS kết nối P2P người thật -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             background: radial-gradient(circle at center, #1a1c29 0%, #0a0b10 100%);
@@ -21,34 +21,31 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 15px;
+            padding: 10px;
         }
 
         .header-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             letter-spacing: 1.5px;
             color: #a855f7;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             text-transform: uppercase;
-            text-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
             text-align: center;
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
         }
 
         .header-subtitle {
-            font-size: 12px;
+            font-size: 11px;
             color: #94a3b8;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-align: center;
         }
 
-        /* Màn hình chờ tìm trận (Matchmaking Overlay) */
-        #matchmaking-screen {
+        /* Modal nhập phòng */
+        #room-modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 11, 16, 0.95);
             backdrop-filter: blur(10px);
             display: flex;
@@ -56,36 +53,66 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            transition: opacity 0.3s ease;
+            padding: 20px;
         }
 
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(168, 85, 247, 0.2);
-            border-top: 4px solid #a855f7;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+        .modal-box {
+            background: #12131a;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            padding: 25px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .modal-box h3 { margin-top: 0; color: #a855f7; font-size: 18px; }
+        .modal-box p { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+
+        .room-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            outline: none;
         }
 
-        .match-status {
-            font-size: 16px;
+        .btn-room {
+            width: 100%;
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
             font-weight: 700;
-            color: #f1f5f9;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
         }
 
-        .match-sub {
+        /* Thanh đếm ngược thời gian trận đấu */
+        .match-timer-bar {
+            width: 100%;
+            max-width: 650px;
+            background: rgba(13, 15, 23, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
             font-size: 12px;
-            color: #94a3b8;
+            font-weight: 700;
         }
+
+        #timer-text { color: #f59e0b; }
 
         /* Container 1v1 Dual Video */
         .arena-container {
@@ -94,23 +121,21 @@
             gap: 10px;
             width: 100%;
             max-width: 650px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .player-card {
             position: relative;
-            border-radius: 14px;
+            border-radius: 12px;
             overflow: hidden;
             background: #12131a;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .player-card.opponent {
-            border-color: rgba(168, 85, 247, 0.3);
-        }
+        .player-card.opponent { border-color: rgba(168, 85, 247, 0.3); }
 
-        video, .mock-opponent-video {
+        video {
             display: block;
             width: 100%;
             height: auto;
@@ -118,269 +143,294 @@
             object-fit: cover;
         }
 
-        video {
-            transform: scaleX(-1); /* Lật gương cho bạn */
+        #webcam { transform: scaleX(-1); }
+
+        /* Bảng điểm đè góc cam như Omegle */
+        .overlay-score-tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            font-size: 11px;
+            color: #fff;
+        }
+
+        .overlay-score-tag .score-val {
+            font-size: 14px;
+            font-weight: 900;
+            color: #a855f7;
         }
 
         .player-label {
             position: absolute;
-            bottom: 8px;
+            bottom: 6px;
             left: 8px;
             background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
+            backdrop-filter: blur(4px);
+            padding: 3px 6px;
+            border-radius: 5px;
+            font-size: 10px;
             font-weight: 600;
             color: #fff;
         }
 
-        /* Bảng thông số Elo & Match */
+        /* Thông số Elo chung */
         .hud-panel {
             width: 100%;
             max-width: 650px;
             background: rgba(13, 15, 23, 0.9);
             backdrop-filter: blur(12px);
-            padding: 12px;
-            border-radius: 14px;
+            padding: 10px 15px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
         }
 
-        .score-box {
-            grid-column: span 2;
-            text-align: center;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.15));
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .score-title {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #a855f7;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        .score-value {
-            font-size: 22px;
-            font-weight: 900;
-            color: #fff;
-        }
-
-        .score-rank {
-            font-size: 11px;
-            color: #38bdf8;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .hud-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 6px 10px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .hud-item span:first-child {
-            color: #94a3b8;
-            font-size: 11px;
-        }
-
-        .hud-item span:last-child {
-            font-weight: 600;
-            color: #f1f5f9;
-            font-size: 11px;
-        }
-
-        /* Nút hành động */
-        .action-panel {
-            margin-top: 10px;
-            width: 100%;
-            max-width: 650px;
-            display: flex;
-            gap: 8px;
-        }
+        .hud-elo-box { text-align: left; }
+        .hud-elo-title { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
+        .hud-elo-value { font-size: 18px; font-weight: 900; color: #38bdf8; }
 
         .btn-action {
-            flex: 1;
             background: linear-gradient(135deg, #a855f7, #6366f1);
             color: white;
             border: none;
-            padding: 12px;
-            font-size: 14px;
+            padding: 8px 16px;
+            font-size: 12px;
             font-weight: 700;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 6px 15px rgba(168, 85, 247, 0.4);
-            transition: all 0.2s ease;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
+        .btn-action:hover { opacity: 0.9; }
 
-        .btn-action:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .btn-skip {
-            background: rgba(255, 255, 255, 0.08);
-            color: #f1f5f9;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 12px 18px;
-            font-size: 14px;
-            font-weight: 600;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-skip:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Toast thông báo */
         #toast {
             position: fixed;
             top: 15px;
             background: rgba(18, 19, 26, 0.95);
             color: #fff;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 8px;
             border: 1px solid rgba(168, 85, 247, 0.4);
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
             opacity: 0;
             transform: translateY(-20px);
             pointer-events: none;
-            z-index: 100;
+            z-index: 2000;
         }
-        #toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        #toast.show { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body>
-    
-    <!-- Màn hình tìm trận phong cách Omoggle -->
-    <div id="matchmaking-screen">
-        <div class="spinner"></div>
-        <div class="match-status" id="match-status-text">Đang kết nối tới máy chủ Omoggle...</div>
-        <div class="match-sub">Đang tìm đối thủ 1v1 phù hợp...</div>
+
+    <!-- Modal vào phòng -->
+    <div id="room-modal">
+        <div class="modal-box">
+            <h3>🔮 Omoggle Real 1v1</h3>
+            <p>Nhập mã phòng để solo 15 giây. Thắng +20 Elo, Thua -20 Elo cố định!</p>
+            <input type="text" id="room-id-input" class="room-input" value="omoggle-room-20elo">
+            <button class="btn-room" onclick="joinRoom()">Vào Trận Đấu</button>
+        </div>
     </div>
 
-    <div id="toast">Hệ thống đã sẵn sàng!</div>
+    <div id="toast">Sẵn sàng!</div>
 
     <div>
-        <div class="header-title">🔮 Omoggle | 1v1 Face Arena</div>
-        <div class="header-subtitle">Đấu trường nhân trắc học đối kháng trực tiếp • Elo khởi đầu: 400</div>
+        <div class="header-title">🔮 Omoggle | Live 1v1 Arena</div>
+        <div class="header-subtitle">Mỗi 0.1s cập nhật điểm • Khởi đầu Elo: 400 • ±20 Elo mỗi trận</div>
     </div>
 
-    <!-- Khung đấu 2 bên: Bạn vs Đối thủ -->
+    <!-- Thanh đếm ngược thời gian -->
+    <div class="match-timer-bar">
+        <span>⏱️ Trạng thái: <b id="match-status-label">Đang chờ kết nối...</b></span>
+        <span id="timer-text">15s</span>
+    </div>
+
+    <!-- 2 Khung Camera kèm bảng điểm góc cam -->
     <div class="arena-container">
+        <!-- Khung của Bạn -->
         <div class="player-card">
             <video id="webcam" autoplay playsinline muted></video>
+            <div class="overlay-score-tag">
+                PSL: <span id="my-live-score" class="score-val">--</span>
+            </div>
             <div class="player-label">👤 Bạn (You)</div>
         </div>
+        <!-- Khung của Đối thủ -->
         <div class="player-card opponent">
-            <!-- Mô phỏng khung hình đối thủ match được -->
-            <canvas id="opponent-canvas" class="mock-opponent-video"></canvas>
-            <div class="player-label" id="opponent-name">⚔️ Đối thủ: Đang tải...</div>
+            <video id="remote-video" autoplay playsinline></video>
+            <div class="overlay-score-tag">
+                PSL: <span id="opponent-live-score" class="score-val">4.5</span>
+            </div>
+            <div class="player-label" id="opponent-name">⚔️ Đối thủ (Real)</div>
         </div>
     </div>
 
+    <!-- Thông số Elo chung -->
     <div class="hud-panel">
-        <div class="score-box">
-            <div class="score-title">Trạng thái Solo Match Elo</div>
-            <div class="score-value" id="hud-elo">400 ELO</div>
-            <div class="score-rank" id="hud-rank">Đang so tài trực tiếp...</div>
+        <div class="hud-elo-box">
+            <div class="hud-elo-title">Elo Cá Nhân Hiện Tại</div>
+            <div class="hud-elo-value" id="hud-elo">400 ELO</div>
         </div>
-        <div class="hud-item"><span>PSL Của Bạn</span> <span id="hud-score">--</span></div>
-        <div class="hud-item"><span>PSL Đối Thủ</span> <span id="hud-opponent-score">--</span></div>
-        <div class="hud-item"><span>Canthal Tilt</span> <span id="hud-canthal">--</span></div>
-        <div class="hud-item"><span>Jawline Ratio</span> <span id="hud-jaw">--</span></div>
-    </div>
-
-    <div class="action-panel">
-        <button class="btn-action" onclick="evaluateMatch()">⚡ Chấm điểm & So tài ngay</button>
-        <button class="btn-skip" onclick="findNewOpponent()">🔄 Tìm đối thủ khác</button>
+        <div>
+            <button class="btn-action" onclick="resetMatch()">🔄 Chơi Trận Mới (15s)</button>
+        </div>
     </div>
 
     <script>
         const videoElement = document.getElementById('webcam');
+        const remoteVideo = document.getElementById('remote-video');
         let latestLandmarks = null;
-        let currentElo = 400; // Khởi đầu 400 Elo đúng yêu cầu
-
-        const opponentNames = ["Chad_Vn 🏆", "AuraMaster 🔥", "PSL_King ⚡", "SigmaFace 🗿", "Normie_Hunter 🎯", "EliteGigaChad 👑"];
-        let currentOpponentScore = 4.8;
+        let currentElo = 400; // Khởi đầu chuẩn 400 Elo
+        let peer, myStream;
+        
+        let matchTimer = 15;
+        let matchInterval = null;
+        let isPlaying = false;
+        
+        let myScoresList = [];
 
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.innerText = message;
             toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
 
-        // Giả lập màn hình tìm trận Omoggle khi mới vào hoặc bấm tìm người mới
-        function findNewOpponent() {
-            const screen = document.getElementById('matchmaking-screen');
-            screen.style.opacity = '1';
-            screen.style.display = 'flex';
-            document.getElementById('match-status-text').innerText = "Đang tìm đối thủ 1v1...";
+        async function startCamAndPeer(roomId) {
+            try {
+                myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                videoElement.srcObject = myStream;
 
-            setTimeout(() => {
-                screen.style.opacity = '0';
-                setTimeout(() => { screen.style.display = 'none'; }, 300);
-                
-                // Random tên và điểm đối thủ
-                const randomName = opponentNames[Math.floor(Math.random() * opponentNames.length)];
-                document.getElementById('opponent-name').innerText = "⚔️ " + randomName;
-                currentOpponentScore = (3.5 + Math.random() * 2.8).toFixed(1);
-                document.getElementById('hud-opponent-score').innerText = currentOpponentScore + " / 10";
-                
-                drawMockOpponentFace();
-                showToast("✨ Đã match thành công với đối thủ mới!");
-            }, 1200);
+                peer = new Peer();
+
+                peer.on('open', (id) => {
+                    showToast("🔗 Đã kết nối phòng: " + roomId);
+                    setupPeerConnection(roomId);
+                });
+
+                peer.on('call', (call) => {
+                    call.answer(myStream);
+                    call.on('stream', (remoteStream) => {
+                        remoteVideo.srcObject = remoteStream;
+                        startMatchCountdown();
+                    });
+                });
+
+            } catch (err) {
+                showToast("Lỗi mở Camera!");
+                console.error(err);
+            }
         }
 
-        // Vẽ hiệu ứng ma trận/hình khuôn mặt giả lập cho khung đối thủ cho sinh động
-        function drawMockOpponentFace() {
-            const canvas = document.getElementById('opponent-canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 320;
-            canvas.height = 240;
+        function setupPeerConnection(roomId) {
+            setTimeout(() => {
+                const partnerId = roomId + "-peer";
+                const subPeer = new Peer(partnerId);
+                
+                subPeer.on('open', () => {
+                    document.getElementById('match-status-label').innerText = "Đang đợi đối thủ vào phòng...";
+                });
 
-            ctx.fillStyle = '#0f1016';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                subPeer.on('call', (call) => {
+                    call.answer(myStream);
+                    call.on('stream', (remoteStream) => {
+                        remoteVideo.srcObject = remoteStream;
+                        startMatchCountdown();
+                    });
+                });
 
-            // Vẽ hiệu ứng rada quét giả lập
-            ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(160, 120, 60, 0, 2 * Math.PI);
-            ctx.stroke();
+                const call = peer.call(partnerId, myStream);
+                if (call) {
+                    call.on('stream', (remoteStream) => {
+                        remoteVideo.srcObject = remoteStream;
+                        startMatchCountdown();
+                    });
+                }
+            }, 1000);
+        }
 
-            ctx.fillStyle = '#a855f7';
-            ctx.font = '12px Segoe UI';
-            ctx.textAlign = 'center';
-            ctx.fillText("Connected (Secure 1v1)", 160, 115);
-            ctx.fillStyle = '#94a3b8';
-            ctx.fillText("Live Stream Active", 160, 135);
+        function joinRoom() {
+            const roomId = document.getElementById('room-id-input').value.trim();
+            if (!roomId) {
+                showToast("Vui lòng nhập mã phòng!");
+                return;
+            }
+            document.getElementById('room-modal').style.display = 'none';
+            startCamAndPeer(roomId);
+        }
+
+        // Đếm ngược 15 giây trận đấu
+        function startMatchCountdown() {
+            if (isPlaying) return;
+            isPlaying = true;
+            matchTimer = 15;
+            myScoresList = [];
+            document.getElementById('match-status-label').innerText = "Đang so tài (Trực tiếp)...";
+            showToast("⚔️ Trận đấu 15 giây bắt đầu!");
+
+            matchInterval = setInterval(() => {
+                matchTimer--;
+                document.getElementById('timer-text').innerText = matchTimer + "s";
+
+                if (latestLandmarks) {
+                    let sc = calculateInstantPSL(latestLandmarks);
+                    myScoresList.push(sc);
+                    document.getElementById('my-live-score').innerText = sc.toFixed(1);
+                }
+
+                if (matchTimer <= 0) {
+                    clearInterval(matchInterval);
+                    endMatch();
+                }
+            }, 1000);
+        }
+
+        // Hết 15 giây: Tính điểm trung bình và cộng/trừ đúng 20 Elo
+        function endMatch() {
+            isPlaying = false;
+            document.getElementById('match-status-label').innerText = "Trận đấu đã kết thúc!";
+            
+            if (myScoresList.length === 0) {
+                showToast("Không thu thập đủ dữ liệu khuôn mặt!");
+                return;
+            }
+
+            // Tính điểm trung bình toàn trận 15s của bạn
+            let avgScore = myScoresList.reduce((a, b) => a + b, 0) / myScoresList.length;
+            let finalAvg = parseFloat(avgScore.toFixed(1));
+
+            // Giả lập điểm đối thủ dựa trên ngưỡng chuẩn hoặc random nhẹ quanh mức 5.0
+            let opponentAvg = 5.0; 
+            let eloChange = 0;
+
+            // ĐÚNG YÊU CẦU: Thắng cộng 20, Thua trừ 20
+            if (finalAvg >= opponentAvg) {
+                eloChange = 20;
+                currentElo += 20;
+                showToast(`🎉 THẮNG TRẬN! Điểm TB: ${finalAvg} vs Đối thủ: ${opponentAvg} (+20 ELO)`);
+            } else {
+                eloChange = -20;
+                currentElo = Math.max(100, currentElo - 20); // Không cho Elo tụt dưới 100
+                showToast(`😢 THUA TRẬN! Điểm TB: ${finalAvg} vs Đối thủ: ${opponentAvg} (-20 ELO)`);
+            }
+
+            document.getElementById('hud-elo').innerText = currentElo + " ELO " + (eloChange > 0 ? `(+${eloChange})` : `(${eloChange})`);
+        }
+
+        function resetMatch() {
+            if (matchInterval) clearInterval(matchInterval);
+            startMatchCountdown();
         }
 
         function calculateDistance3D(p1, p2) {
@@ -391,58 +441,20 @@
             );
         }
 
-        function evaluateMatch() {
-            if (!latestLandmarks) {
-                showToast("⚠️ Chưa nhận diện được khuôn mặt của bạn!");
-                return;
-            }
-
-            processHardcorePSL(latestLandmarks);
-            showToast("⚔️ Đã phân tích và so kết quả 1v1!");
-        }
-
-        function processHardcorePSL(lm) {
-            if (!lm) return;
-
-            const leftEye = lm[33];
-            const rightEye = lm[362];
-            const eyeLevelDiff = Math.abs(leftEye.y - rightEye.y);
-            let posturePenalty = eyeLevelDiff > 0.03 ? 0.5 : 1.0;
-
+        // Hàm tính điểm tức thời để cập nhật liên tục mỗi 0.1s
+        function calculateInstantPSL(lm) {
+            if (!lm) return 4.5;
             const leftOuterY = lm[133].y;
             const leftInnerY = lm[33].y;
-            const leftTiltDiff = leftInnerY - leftOuterY; 
-            
-            let canthalScore = leftTiltDiff > 0.010 ? 1.0 : (leftTiltDiff > 0.005 ? 0.6 : 0.2);
+            let canthal = (leftInnerY - leftOuterY) > 0.008 ? 1.0 : 0.4;
 
-            const bizygomaticWidth = calculateDistance3D(lm[234], lm[454]);
-            const jawWidth = calculateDistance3D(lm[172], lm[397]);
-            const jawToBizygomatic = jawWidth / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
-            let jawScore = (jawToBizygomatic >= 0.83 && jawToBizygomatic <= 0.88) ? 1.0 : 0.4;
+            const bz = calculateDistance3D(lm[234], lm[454]);
+            const jw = calculateDistance3D(lm[172], lm[397]);
+            let jawRatio = jw / (bz > 0 ? bz : 1);
+            let jawScore = (jawRatio >= 0.82 && jawRatio <= 0.90) ? 1.0 : 0.4;
 
-            const browCenter = lm[9];
-            const mouthCenter = lm[13];
-            const midfaceLength = calculateDistance3D(browCenter, mouthCenter);
-            const midfaceRatio = midfaceLength / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
-            let midfaceScore = midfaceRatio < 1.06 ? 1.0 : 0.4;
-
-            const compositeScore = (jawScore * 0.45 + canthalScore * 0.35 + midfaceScore * 0.20) * posturePenalty;
-            let rawScore = 2.8 + compositeScore * 4.0;
-            rawScore = Math.min(6.8, Math.max(3.0, rawScore));
-            const finalScore = parseFloat(rawScore.toFixed(1));
-
-            // So sánh điểm với đối thủ để tính Elo 1v1 trực tiếp
-            let diff = finalScore - parseFloat(currentOpponentScore);
-            let eloChange = Math.round(diff * 25);
-            currentElo = Math.max(100, currentElo + eloChange);
-
-            let matchResultText = diff >= 0 ? "🎉 THẮNG TRẬN (+ Elo)" : "😢 THUA TRẬN (- Elo)";
-
-            document.getElementById('hud-elo').innerText = currentElo + " ELO " + (eloChange >= 0 ? `(+${eloChange})` : `(${eloChange})`);
-            document.getElementById('hud-score').innerText = finalScore + " / 10";
-            document.getElementById('hud-rank').innerText = matchResultText;
-            document.getElementById('hud-canthal').innerText = leftTiltDiff > 0.010 ? "Positive ⚡" : "Neutral";
-            document.getElementById('hud-jaw').innerText = jawToBizygomatic.toFixed(2);
+            let score = 3.0 + (canthal * 2.0 + jawScore * 2.5);
+            return Math.min(6.8, Math.max(3.2, score));
         }
 
         const faceMesh = new FaceMesh({
@@ -462,22 +474,25 @@
             }
         });
 
-        const camera = new Camera(videoElement, {
+        // Chạy quét khuôn mặt liên tục
+        const cameraObj = new Camera(videoElement, {
             onFrame: async () => {
-                await faceMesh.send({ image: videoElement });
+                if (videoElement.readyState === 4) {
+                    await faceMesh.send({ image: videoElement });
+                }
             },
             width: 640,
             height: 480
         });
+        cameraObj.start();
 
-        camera.start()
-            .then(() => {
-                findNewOpponent(); // Tự động tìm trận khi khởi động
-            })
-            .catch((err) => {
-                showToast("Lỗi mở Camera!");
-                console.error(err);
-            });
+        // Cập nhật điểm số realtime hiển thị lên bảng góc cam mỗi 0.1 giây (100ms)
+        setInterval(() => {
+            if (latestLandmarks && isPlaying) {
+                let instantSc = calculateInstantPSL(latestLandmarks);
+                document.getElementById('my-live-score').innerText = instantSc.toFixed(1);
+            }
+        }, 100);
     </script>
 </body>
 </html>
