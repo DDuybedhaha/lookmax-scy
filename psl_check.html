@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Male PSL Authentic Rating System</title>
+    <title>Male PSL Authentic Rating System (Hardcore)</title>
     <!-- Thư viện MediaPipe Face Mesh -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
@@ -62,12 +62,12 @@
             text-align: left;
             line-height: 1.4;
             pointer-events: none;
-            width: 230px;
+            width: 240px;
         }
 
         .hud-title {
             font-weight: bold;
-            color: #ffaa00;
+            color: #ff4444;
             margin-bottom: 3px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 2px;
@@ -106,7 +106,7 @@
         .scan-title {
             font-size: 13px;
             font-weight: bold;
-            color: #ffaa00;
+            color: #ff4444;
             margin-bottom: 10px;
             letter-spacing: 1px;
         }
@@ -121,7 +121,7 @@
         .progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #ffaa00, #ff4444);
+            background: linear-gradient(90deg, #ff4444, #ffaa00);
             transition: width 0.05s linear;
         }
         .progress-text {
@@ -172,8 +172,8 @@
         .btn-start { background: #333; color: #fff; }
         .btn-start:hover { background: #444; }
         
-        .btn-capture { background: #ffaa00; color: #000; }
-        .btn-capture:hover { background: #e09500; }
+        .btn-capture { background: #ff4444; color: #fff; }
+        .btn-capture:hover { background: #cc0000; }
         .btn-capture:disabled { background: #555; color: #888; cursor: not-allowed; }
 
         .panel-container {
@@ -234,8 +234,8 @@
 </head>
 <body>
 
-    <h1>Male PSL Authentic Rating System</h1>
-    <p>Hệ thống quét sinh trắc học khắt khe theo chuẩn Nam (MALE LOOKSMAXXING & CHAD STANDARDS)</p>
+    <h1>Male PSL Authentic Rating System (Hardcore)</h1>
+    <p>Thuật toán nhân trắc học khắt khe thực tế - Không buông lỏng tiêu chuẩn</p>
     <h2>Ai đc trên 7.3 điểm thì liên E discord duyh1h5 ae nhé!</h2>
     <div class="display-container">
         <video id="webcam" playsinline></video>
@@ -243,8 +243,8 @@
         <canvas id="freeze_canvas" width="480" height="360"></canvas>
         
         <div id="hud-overlay">
-            <div class="hud-title">⚡ MALE PSL METRICS</div>
-            <div><b>OVERALL:</b> <span id="hud-score" style="color: #ffaa00; font-size: 13px;">--</span>/10</div>
+            <div class="hud-title">⚡ HARDCORE PSL METRICS</div>
+            <div><b>OVERALL:</b> <span id="hud-score" style="color: #ff4444; font-size: 13px;">--</span>/10</div>
             <div><b>TIER:</b> <span id="hud-rank" style="color: #fff;">--</span></div>
             <div><b>Canthal Tilt:</b> <span id="hud-canthal" style="color: #fff;">--</span></div>
             <div><b>Jawline/Gonial:</b> <span id="hud-jaw" style="color: #fff;">--</span></div>
@@ -254,7 +254,7 @@
 
         <div id="scan-overlay">
             <div class="scan-box">
-                <div class="scan-title">🔍 MALE PSL SCANNING...</div>
+                <div class="scan-title">🔍 HARDCORE SCAN...</div>
                 <div class="progress-track">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
@@ -267,7 +267,7 @@
 
     <div class="controls-row">
         <button class="btn-action btn-start" onclick="initCamera()">1. Bật Camera</button>
-        <button id="btn-scan-action" class="btn-action btn-capture" onclick="startFreezeScan()">📸 2. Quét Chuẩn Nam & Chấm Điểm</button>
+        <button id="btn-scan-action" class="btn-action btn-capture" onclick="startFreezeScan()">📸 2. Quét Khắt Khe & Chấm Điểm</button>
     </div>
 
     <div class="panel-container">
@@ -278,7 +278,7 @@
             <button type="button" onclick="saveGlobalScore()" id="btn-save-action" class="btn-save">Lưu</button>
         </div>
 
-        <div style="font-size: 13px; font-weight: bold; color: #ffaa00; margin-bottom: 5px;">⭐ Top 3 Cao Thủ Nam:</div>
+        <div style="font-size: 13px; font-weight: bold; color: #ff4444; margin-bottom: 5px;">⭐ Top 3 Cao Thủ Nam:</div>
         <ul id="top3-list" style="padding-left: 20px; margin: 0 0 10px 0; font-size: 13px;">
             <li>Đang tải...</li>
         </ul>
@@ -333,12 +333,12 @@
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
     }
 
-    function getMalePSLRank(score) {
-        if (score >= 7.5) return "Godtier / Apex Chad ⚡";
-        if (score >= 6.8) return "High-Tier Chad / Model 🔥";
-        if (score >= 6.0) return "Chadlite ✨";
-        if (score >= 5.2) return "HTN (High-Tier Normal)";
-        if (score >= 4.5) return "MTN (Mid-Tier Normal)";
+    function getHardcorePSLRank(score) {
+        if (score >= 7.3) return "Apex Chad / Godtier ⚡";
+        if (score >= 6.5) return "High-Tier Chad 🔥";
+        if (score >= 5.8) return "Chadlite ✨";
+        if (score >= 5.0) return "HTN (High-Tier Normal)";
+        if (score >= 4.0) return "MTN (Mid-Tier Normal)";
         return "Sub-five / LTN 📉";
     }
 
@@ -361,8 +361,8 @@
             faceMesh.setOptions({
                 maxNumFaces: 1,
                 refineLandmarks: true,
-                minDetectionConfidence: 0.65,
-                minTrackingConfidence: 0.65
+                minDetectionConfidence: 0.7,
+                minTrackingConfidence: 0.7
             });
 
             faceMesh.onResults((results) => {
@@ -374,7 +374,7 @@
                 
                 if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                     latestLandmarks = results.multiFaceLandmarks[0];
-                    canvasCtx.strokeStyle = 'rgba(255, 170, 0, 0.4)';
+                    canvasCtx.strokeStyle = 'rgba(255, 68, 68, 0.4)';
                     canvasCtx.lineWidth = 0.5;
                     for (let i = 0; i < latestLandmarks.length; i += 10) {
                         let p = latestLandmarks[i];
@@ -396,7 +396,7 @@
             await videoElement.play();
 
             predictWebcam();
-            showToast("📷 Đã bật camera chuẩn nam!");
+            showToast("📷 Đã bật camera chế độ khắt khe!");
         } catch (err) {
             console.error(err);
             showToast("⚠️ Vui lòng cấp quyền camera trình duyệt!");
@@ -468,75 +468,74 @@
                     isScanning = false;
                     document.getElementById('btn-scan-action').disabled = false;
 
-                    processMalePSL(capturedLandmarks);
+                    processHardcorePSL(capturedLandmarks);
                 }, 300);
             }
         }, intervalTime);
     }
 
-    function processMalePSL(lm) {
+    function processHardcorePSL(lm) {
         if (!lm) return;
 
-        // Các mốc tiêu chuẩn MediaPipe cho Nam:
-        // Đuôi mắt & khóe mắt trái: 33 (trong), 133 (ngoài)
-        // Đuôi mắt & khóe mắt phải: 362 (trong), 263 (ngoài)
-        // Góc xương hàm trái/phải (Gonial angle): 172, 397
-        // Gò má trái/phải: 234, 454
-        // Chân mày giữa & chóp mũi & cằm: 9, 1, 152
-
-        // 1. Canthal Tilt (Độ nghiêng đuôi mắt)
-        // Tính độ chênh lệch trục Y giữa đuôi mắt ngoài và khóe mắt trong
+        // 1. Canthal Tilt (Độ nghiêng đuôi mắt khắt khe hơn)
         const leftOuterY = lm[133].y;
         const leftInnerY = lm[33].y;
-        // Do hệ tọa độ Y lật ngược trên màn hình, đuôi mắt cao hơn (Y nhỏ hơn) nghĩa là Positive Tilt
         const leftTiltDiff = leftInnerY - leftOuterY; 
-        let canthalScore = leftTiltDiff > 0.005 ? 1.0 : (leftTiltDiff > 0 ? 0.7 : 0.3); // Phạt nặng nếu negative/neutral
+        let canthalScore = 0.2; // Mặc định phạt nặng nếu không đạt positive rõ rệt
+        if (leftTiltDiff > 0.008) canthalScore = 1.0; // Positive chuẩn Chad
+        else if (leftTiltDiff > 0.003) canthalScore = 0.6; // Hơi nhếch nhẹ
+        else canthalScore = 0.1; // Neutral/Negative bị trừ điểm triệt để
 
-        // 2. Jawline & Gonial Angle (Độ vuông vức xương hàm)
+        // 2. Jawline & Gonial Angle (Độ vuông xương hàm thực tế)
         const bizygomaticWidth = calculateDistance3D(lm[234], lm[454]);
         const jawWidth = calculateDistance3D(lm[172], lm[397]);
         const jawToBizygomatic = jawWidth / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
-        // Chuẩn Chad: xương hàm gần bằng hoặc cân đối với gò má (tỷ lệ từ 0.80 đến 0.92)
-        let jawScore = 0.4;
-        if (jawToBizygomatic >= 0.78 && jawToBizygomatic <= 0.93) {
+        
+        let jawScore = 0.3;
+        // Chỉ số đẹp chuẩn nam tính: xương hàm phải rõ (từ 0.82 đến 0.90)
+        if (jawToBizygomatic >= 0.82 && jawToBizygomatic <= 0.90) {
             jawScore = 1.0;
-        } else if (jawToBizygomatic > 0.7 && jawToBizygomatic < 1.0) {
-            jawScore = 0.7;
+        } else if (jawToBizygomatic >= 0.78 && jawToBizygomatic <= 0.94) {
+            jawScore = 0.6;
+        } else {
+            jawScore = 0.2; // Mặt quá tròn hoặc hàm quá hẹp bị phạt nặng
         }
 
-        // 3. Midface Compactness (Tỷ lệ Trung tâm mặt ngắn)
+        // 3. Midface Compactness (Trung tâm mặt ngắn)
         const browCenter = lm[9];
         const noseTip = lm[1];
         const mouthCenter = lm[13];
         const faceWidth = bizygomaticWidth;
         const midfaceLength = calculateDistance3D(browCenter, mouthCenter);
         const midfaceRatio = midfaceLength / (faceWidth > 0 ? faceWidth : 1);
-        // Tỷ lệ mặt gọn (compact midface) được đánh giá cao trong PSL
-        let midfaceScore = midfaceRatio < 1.15 ? 1.0 : (midfaceRatio < 1.3 ? 0.7 : 0.4);
-
-        // 4. Sexual Dimorphism (Độ nhô xương chân mày / Cằm sắc nét)
-        // Khoảng cách từ sống mũi tới cằm so với độ rộng tổng thể
-        const chinDepth = calculateDistance3D(noseTip, lm[152]);
-        let dimorphismScore = (chinDepth > faceWidth * 0.45) ? 1.0 : 0.6;
-
-        // Tổng hợp điểm số Male PSL (Thang điểm khắt khe từ 4.2 đến 7.8)
-        // Trọng số: Jawline (35%), Canthal Tilt (25%), Midface (25%), Dimorphism (15%)
-        const compositeScore = (jawScore * 0.35 + canthalScore * 0.25 + midfaceScore * 0.25 + dimorphismScore * 0.15);
         
-        let finalScore = (4.2 + compositeScore * 3.6).toFixed(1);
-        finalScore = Math.min(7.8, Math.max(4.2, parseFloat(finalScore))).toFixed(1);
+        let midfaceScore = 0.3;
+        if (midfaceRatio < 1.10) midfaceScore = 1.0;
+        else if (midfaceRatio < 1.20) midfaceScore = 0.6;
+        else midfaceScore = 0.2; // Mặt dài sẽ bị kéo tụt điểm
 
-        const rankName = getMalePSLRank(parseFloat(finalScore));
+        // 4. Sexual Dimorphism (Độ nam tính xương chân mày / cằm)
+        const chinDepth = calculateDistance3D(noseTip, lm[152]);
+        let dimorphismScore = (chinDepth > faceWidth * 0.48) ? 1.0 : 0.4;
 
-        // Cập nhật HUD hiển thị chi tiết chuẩn nam
+        // Công thức tính điểm cứng rắn (Baseline thấp, max cấu trúc chuẩn mới chạm đỉnh)
+        const compositeScore = (jawScore * 0.40 + canthalScore * 0.30 + midfaceScore * 0.20 + dimorphismScore * 0.10);
+        
+        // Dải điểm từ 3.2 đến 7.5 (Rất ít khi vượt qua 7.0 nếu không có cấu trúc xương mẫu)
+        let finalScore = (3.0 + compositeScore * 4.3).toFixed(1);
+        finalScore = Math.min(7.5, Math.max(3.2, parseFloat(finalScore))).toFixed(1);
+
+        const rankName = getHardcorePSLRank(parseFloat(finalScore));
+
+        // Cập nhật HUD hiển thị chi tiết
         document.getElementById('hud-score').innerText = String(finalScore).replace(',', '.');
         document.getElementById('hud-rank').innerText = rankName;
-        document.getElementById('hud-canthal').innerText = leftTiltDiff > 0.005 ? "Positive (Chad) ⚡" : "Neutral / Negative";
-        document.getElementById('hud-jaw').innerText = jawToBizygomatic.toFixed(2) + " (Sharp)";
-        document.getElementById('hud-midface').innerText = midfaceRatio < 1.15 ? "Compact (Ideal)" : "Long";
-        document.getElementById('hud-dimorph').innerText = dimorphismScore === 1.0 ? "High Dimorphism 🔥" : "Soft Features";
+        document.getElementById('hud-canthal').innerText = leftTiltDiff > 0.008 ? "Strong Positive ⚡" : "Suboptimal / Flat";
+        document.getElementById('hud-jaw').innerText = jawToBizygomatic.toFixed(2) + (jawScore === 1.0 ? " (Ideal)" : " (Flawed)");
+        document.getElementById('hud-midface').innerText = midfaceRatio < 1.10 ? "Compact" : "Extended 📉";
+        document.getElementById('hud-dimorph').innerText = dimorphismScore === 1.0 ? "Masked/Dimorphic 🔥" : "Soft/Neotenic";
 
-        showToast(`⚡ Male PSL Rating: ${finalScore}/10 (${rankName})`);
+        showToast(`⚡ Hardcore PSL: ${finalScore}/10 (${rankName})`);
     }
 
     function getDeviceToken() {
@@ -578,7 +577,7 @@
                         let crown = index === 0 ? "👑 " : (index === 1 ? "🥈 " : "🥉 ");
                         let cleanScore = parseFloat(String(item.score).replace(',', '.'));
                         let displayScore = !isNaN(cleanScore) ? cleanScore.toFixed(1) : item.score;
-                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ffaa00;">${displayScore}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
+                        top3Html += `<li style="margin-bottom: 4px;"><b>${crown}#${index + 1}</b> ${item.name}: <span style="color: #ff4444;">${displayScore}</span> <br><small style="color:#aaa;">(${item.rank})</small></li>`;
                     });
 
                     const theRest = data.slice(3);
@@ -588,7 +587,7 @@
                         theRest.forEach((item, index) => {
                             let cleanScore = parseFloat(String(item.score).replace(',', '.'));
                             let displayScore = !isNaN(cleanScore) ? cleanScore.toFixed(1) : item.score;
-                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #ffaa00;">${displayScore}</span> (${item.rank})</li>`;
+                            restHtml += `<li style="margin-bottom: 4px;"><b>#${index + 4}</b> ${item.name}: <span style="color: #ff4444;">${displayScore}</span> (${item.rank})</li>`;
                         });
                     }
 
@@ -600,7 +599,7 @@
                         const myRecord = data[myRecordIndex];
                         let cleanMyScore = parseFloat(String(myRecord.score).replace(',', '.'));
                         let displayMyScore = !isNaN(cleanMyScore) ? cleanMyScore.toFixed(1) : myRecord.score;
-                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ffaa00;">${displayMyScore}</span> - Tier: <b>${myRecord.rank}</b>`;
+                        userBox.innerHTML = `Vị trí của bạn: <b>#${myRecordIndex + 1}</b> (${myRecord.name}) <br>Điểm: <span style="color:#ff4444;">${displayMyScore}</span> - Tier: <b>${myRecord.rank}</b>`;
                     } else {
                         userBox.innerHTML = `Trạng thái: <b>Chưa lưu điểm trên máy này</b>`;
                     }
