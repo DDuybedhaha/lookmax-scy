@@ -244,7 +244,7 @@
 
     <div>
         <div class="header-title">⚡ Hardcore PSL Engine</div>
-        <div class="header-subtitle">Hệ thống nhân trắc học khuôn mặt khắt khe</div>
+        <div class="header-subtitle">Hệ thống nhân trắc học khuôn mặt chuẩn xác</div>
     </div>
 
     <div class="container">
@@ -306,17 +306,14 @@
             return "Raw Sub5 ⚠️";
         }
 
-        // Bấm nút là freeze ngay lập tức và giữ nguyên trạng thái đóng băng cho đến khi chấm xong
         function captureAndFreeze() {
             if (!latestLandmarks) {
                 showToast("⚠️ Chưa nhận diện được khuôn mặt! Hãy canh lại camera.");
                 return;
             }
 
-            // Đánh dấu đã chụp để dừng camera feed
             isCaptured = true;
 
-            // 1. Chụp hình đưa lên canvas để freeze khung hình
             snapshotCanvas.width = videoElement.videoWidth || 640;
             snapshotCanvas.height = videoElement.videoHeight || 480;
             
@@ -327,11 +324,9 @@
             
             snapshotCanvas.style.display = 'block';
 
-            // Khóa nút bấm
             document.getElementById('btn-capture').disabled = true;
             document.getElementById('hud-rank').innerText = "Đang phân tích chỉ số...";
 
-            // 2. Chạy thanh tiến trình giả lập xử lý trong 1.5 giây
             let progress = 0;
             const progressBar = document.getElementById('scan-progress');
 
@@ -342,10 +337,8 @@
 
                 if (progress >= 100) {
                     clearInterval(interval);
-                    // 3. Hoàn tất chấm điểm, hiển thị kết quả (khung hình vẫn tiếp tục giữ nguyên freeze)
                     processHardcorePSL(latestLandmarks);
                     
-                    // Chuyển nút bấm thành nút Chụp lại
                     document.getElementById('btn-capture').style.display = 'none';
                     document.getElementById('btn-capture').disabled = false;
                     document.getElementById('btn-reset').style.display = 'block';
@@ -373,19 +366,24 @@
         function processHardcorePSL(lm) {
             if (!lm) return;
 
+            // 1. Kiểm tra tư thế
             const leftEye = lm[33];
             const rightEye = lm[362];
             const eyeLevelDiff = Math.abs(leftEye.y - rightEye.y);
             let posturePenalty = eyeLevelDiff > 0.03 ? 0.5 : 1.0;
 
+            // 2. Chấm điểm Canthal Tilt (theo logic chuẩn cũ nhưng cho phép chạy dải mượt)
             const leftOuterY = lm[133].y;
             const leftInnerY = lm[33].y;
             const leftTiltDiff = leftInnerY - leftOuterY; 
-            let canthalScore = 0.1; 
+            
+            let canthalScore = 0.2; 
             if (leftTiltDiff > 0.010) canthalScore = 1.0; 
-            else if (leftTiltDiff > 0.005) canthalScore = 0.5; 
+            else if (leftTiltDiff > 0.005) canthalScore = 0.6; 
+            else if (leftTiltDiff > 0.002) canthalScore = 0.4;
             else canthalScore = 0.2; 
 
+            // 3. Chấm điểm Jawline Ratio
             const bizygomaticWidth = calculateDistance3D(lm[234], lm[454]);
             const jawWidth = calculateDistance3D(lm[172], lm[397]);
             const jawToBizygomatic = jawWidth / (bizygomaticWidth > 0 ? bizygomaticWidth : 1);
@@ -393,12 +391,15 @@
             let jawScore = 0.2;
             if (jawToBizygomatic >= 0.83 && jawToBizygomatic <= 0.88) {
                 jawScore = 1.0;
-            } else if (jawToBizygomatic >= 0.78 && jawToBizygomatic <= 0.92) {
-                jawScore = 0.5;
+            } else if (jawToBizygomatic >= 0.79 && jawToBizygomatic <= 0.91) {
+                jawScore = 0.6;
+            } else if (jawToBizygomatic >= 0.75 && jawToBizygomatic <= 0.95) {
+                jawScore = 0.4;
             } else {
-                jawScore = 0.1; 
+                jawScore = 0.2; 
             }
 
+            // 4. Chấm điểm Midface
             const browCenter = lm[9];
             const mouthCenter = lm[13];
             const faceWidth = bizygomaticWidth;
@@ -406,10 +407,12 @@
             const midfaceRatio = midfaceLength / (faceWidth > 0 ? faceWidth : 1);
             
             let midfaceScore = 0.2;
-            if (midfaceRatio < 1.08) midfaceScore = 1.0;
-            else if (midfaceRatio < 1.15) midfaceScore = 0.5;
-            else midfaceScore = 0.1;
+            if (midfaceRatio < 1.06) midfaceScore = 1.0;
+            else if (midfaceRatio < 1.10) midfaceScore = 0.6;
+            else if (midfaceRatio < 1.15) midfaceScore = 0.4;
+            else midfaceScore = 0.2;
 
+            // Tính toán điểm tổng hợp dựa hoàn toàn trên logic gốc (không cộng thêm điểm ảo)
             const compositeScore = (jawScore * 0.45 + canthalScore * 0.35 + midfaceScore * 0.20) * posturePenalty;
             
             let rawScore = 2.8 + compositeScore * 4.0;
@@ -418,7 +421,7 @@
             const finalScore = rawScore.toFixed(1);
             const rankName = getHardcorePSLRank(parseFloat(finalScore));
 
-            document.getElementById('hud-score').innerText = String(finalScore).replace(',', '.') + " / 10";
+            document.getElementById('hud-score').innerText = String(finalScore).replace('.', ',') + " / 10";
             document.getElementById('hud-rank').innerText = rankName;
             document.getElementById('hud-canthal').innerText = leftTiltDiff > 0.010 ? "Positive ⚡" : "Flat / Neutral";
             document.getElementById('hud-jaw').innerText = jawToBizygomatic.toFixed(2) + (jawScore === 1.0 ? " (Ideal)" : " (Avg)");
@@ -439,14 +442,12 @@
 
         faceMesh.onResults((results) => {
             if (!isCaptured && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                // Chỉ cập nhật landmark liên tục khi CHƯA bấm chụp
                 latestLandmarks = results.multiFaceLandmarks[0];
             }
         });
 
         const camera = new Camera(videoElement, {
             onFrame: async () => {
-                // Nếu đã bấm chụp thì dừng gửi frame vào model để giữ nguyên khung hình freeze
                 if (!isCaptured) {
                     await faceMesh.send({ image: videoElement });
                 }
