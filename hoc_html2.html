@@ -94,6 +94,12 @@
             text-align: center;
             position: relative;
             box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+        .hub-card.clickable:hover {
+            border-color: rgba(168, 85, 247, 0.6);
+            transform: translateY(-2px);
+            cursor: pointer;
         }
         .hub-card.center-arena {
             grid-column: span 1;
@@ -132,99 +138,106 @@
         }
         .btn-start-match:hover { opacity: 0.95; }
 
-        /* Trận đấu Arena Screen (Ẩn mặc định) */
-        #arena-screen {
-            display: none;
-            width: 100%;
-            max-width: 1100px;
-            flex-direction: column;
-            align-items: center;
+        /* Leaderboard table styles */
+        .rank-list {
+            width: 100%; display: flex; flex-direction: column; gap: 6px; margin-top: auto;
+        }
+        .rank-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 8px; font-size: 11px;
+        }
+        .rank-item.top1 { border: 1px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05); }
+
+        /* Chung cho các Modal (Customs & Shop) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 11, 16, 0.85); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal-box {
+            background: #12141f; border: 1px solid rgba(168, 85, 247, 0.4);
+            padding: 25px; border-radius: 16px; width: 100%; max-width: 420px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        .modal-box h3 { margin-top: 0; color: #a855f7; font-size: 18px; }
+        .modal-box p { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        .custom-input {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+            padding: 10px 14px; border-radius: 8px; color: #fff; font-size: 14px; text-align: center;
+            margin-bottom: 15px; outline: none;
         }
 
+        /* Danh sách đồ trong Shop */
+        .shop-items-grid {
+            display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; margin-bottom: 15px; text-align: left;
+        }
+        .shop-item-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px 14px; border-radius: 10px;
+        }
+        .shop-item-info .item-name { font-size: 12px; font-weight: 700; color: #fff; }
+        .shop-item-info .item-desc { font-size: 10px; color: #94a3b8; }
+        .btn-buy {
+            background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000;
+            padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer;
+        }
+        .btn-buy.owned { background: rgba(255,255,255,0.1); color: #94a3b8; cursor: default; }
+
+        /* Trận đấu Arena Screen */
+        #arena-screen {
+            display: none; width: 100%; max-width: 1100px; flex-direction: column; align-items: center;
+        }
         .arena-top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 12px; background: #12141f; padding: 10px 20px; border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
         }
-
         .match-grid {
-            display: grid;
-            grid-template-columns: 1fr 50px 1fr;
-            gap: 15px;
-            width: 100%;
-            align-items: center;
+            display: grid; grid-template-columns: 1fr 50px 1fr; gap: 15px; width: 100%; align-items: center;
         }
-
         .cam-box {
-            position: relative;
-            background: #12141f;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 2px solid rgba(168, 85, 247, 0.4);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            position: relative; background: #12141f; border-radius: 16px; overflow: hidden;
+            border: 2px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
         .cam-box.opponent { border-color: rgba(255, 255, 255, 0.1); }
-
         video { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
         #webcam { transform: scaleX(-1); }
 
-        /* Bảng điểm Omegle Style trên Camera */
         .omg-score-card {
-            position: absolute;
-            top: 12px; left: 12px;
-            background: rgba(15, 17, 26, 0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 10px 14px;
-            min-width: 130px;
+            position: absolute; top: 12px; left: 12px; background: rgba(15, 17, 26, 0.85);
+            backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 10px 14px; min-width: 130px;
         }
         .omg-score-title { font-size: 9px; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
         .omg-score-num { font-size: 22px; font-weight: 900; color: #fff; margin: 2px 0; }
         .omg-sub-info { font-size: 10px; color: #f59e0b; font-weight: 700; }
 
         .omg-profile-badge {
-            position: absolute;
-            top: 12px; right: 12px;
-            background: rgba(15, 17, 26, 0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            position: absolute; top: 12px; right: 12px; background: rgba(15, 17, 26, 0.85);
+            backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; gap: 8px;
         }
         .profile-name { font-size: 12px; font-weight: 800; color: #fff; }
         .profile-elo { font-size: 11px; color: #38bdf8; font-weight: 700; }
-
         .btn-report {
-            position: absolute;
-            top: 12px; left: 12px;
-            background: rgba(185, 28, 28, 0.85);
-            color: #fff; border: none; padding: 8px 16px;
-            border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+            position: absolute; top: 12px; left: 12px; background: rgba(185, 28, 28, 0.85);
+            color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
         }
-
         .vs-badge {
-            width: 50px; height: 50px; border-radius: 50%;
-            background: linear-gradient(135deg, #a855f7, #6366f1);
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 900; font-size: 16px; color: #fff; margin: 0 auto;
+            width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, #6366f1);
+            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; color: #fff; margin: 0 auto;
             box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
         }
-
         .watermark {
-            position: absolute; bottom: 10px; right: 12px;
-            font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.4);
+            position: absolute; bottom: 10px; right: 12px; font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.4);
             letter-spacing: 1.5px; pointer-events: none;
         }
 
         #toast {
-            position: fixed; top: 20px; background: #12141f; color: #fff;
-            padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.4);
-            font-weight: 700; font-size: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: all 0.3s ease; opacity: 0; transform: translateY(-20px); pointer-events: none; z-index: 3000;
+            position: fixed; top: 20px; background: #12141f; color: #fff; padding: 10px 20px;
+            border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.4); font-weight: 700; font-size: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: all 0.3s ease; opacity: 0; transform: translateY(-20px); pointer-events: none; z-index: 3000;
         }
         #toast.show { opacity: 1; transform: translateY(0); }
     </style>
@@ -232,6 +245,55 @@
 <body>
 
     <div id="toast">Sẵn sàng!</div>
+
+    <!-- Modal tạo/nhập phòng Customs 1v1 -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>⚔️ Customs 1v1 Room</h3>
+            <p>Tạo hoặc nhập mã phòng riêng để solo trực tiếp với bạn bè.</p>
+            <input type="text" id="custom-room-input" class="custom-input" placeholder="Nhập mã phòng tùy chỉnh...">
+            <button class="btn-start-match" onclick="joinCustomRoom()" style="margin-bottom: 10px;">Vào Phòng Custom</button>
+            <button onclick="closeCustomModal()" style="background:transparent; border:none; color:#94a3b8; font-size:12px; cursor:pointer;">Đóng</button>
+        </div>
+    </div>
+
+    <!-- Modal Cửa Hàng Profile (Shop Items) -->
+    <div id="shop-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 450px;">
+            <h3>💎 Profile Cosmetics Shop</h3>
+            <p>Dùng Gems để mua vật phẩm làm đẹp khung hồ sơ và danh hiệu của bạn.</p>
+            
+            <div style="margin-bottom: 12px; font-size: 13px; font-weight: 700; color: #f59e0b;">
+                Số dư hiện tại: <span id="shop-gems-display">91</span> Gems
+            </div>
+
+            <div class="shop-items-grid">
+                <div class="shop-item-row">
+                    <div class="shop-item-info">
+                        <div class="item-name">✨ Khung Viền Neon Tím</div>
+                        <div class="item-desc">Làm sáng rực rỡ khung webcam của bạn</div>
+                    </div>
+                    <button class="btn-buy" id="btn-item-1" onclick="buyShopItem(1, 30)">30 Gems</button>
+                </div>
+                <div class="shop-item-row">
+                    <div class="shop-item-info">
+                        <div class="item-name">👑 Danh Hiệu "Chads God"</div>
+                        <div class="item-desc">Hiển thị danh hiệu độc quyền trên profile</div>
+                    </div>
+                    <button class="btn-buy" id="btn-item-2" onclick="buyShopItem(2, 50)">50 Gems</button>
+                </div>
+                <div class="shop-item-row">
+                    <div class="shop-item-info">
+                        <div class="item-name">🔥 Hiệu Ứng Lửa Cháy Vàng</div>
+                        <div class="item-desc">Hiệu ứng chiến thần ở bảng điểm cá nhân</div>
+                    </div>
+                    <button class="btn-buy" id="btn-item-3" onclick="buyShopItem(3, 40)">40 Gems</button>
+                </div>
+            </div>
+
+            <button onclick="closeShopModal()" style="background:transparent; border:none; color:#94a3b8; font-size:12px; cursor:pointer;">Đóng cửa hàng</button>
+        </div>
+    </div>
 
     <!-- Top Navbar -->
     <div class="top-nav">
@@ -251,12 +313,12 @@
 
     <!-- HUB DASHBOARD SCREEN -->
     <div id="hub-screen">
-        <!-- Shop Card -->
-        <div class="hub-card">
+        <!-- Shop Card (Bấm vào để mở Shop Items) -->
+        <div class="hub-card clickable" onclick="openShopModal()">
             <div class="hub-icon">💎</div>
             <div class="hub-title">Shop</div>
             <div class="hub-desc">Cosmetics, Bundles & Pro</div>
-            <div style="margin-top: auto; font-size: 12px; color: #f59e0b; font-weight: 700;">💎 91 Gems</div>
+            <div style="margin-top: auto; font-size: 12px; color: #f59e0b; font-weight: 700;">💎 <span id="hub-gems-text">91</span> Gems</div>
         </div>
 
         <!-- Arena Main Card -->
@@ -293,20 +355,39 @@
                 <input type="text" id="room-id-input" value="omoggle-room-20elo" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:8px; color:#fff; text-align:center; font-size:13px; outline:none;" placeholder="Mã phòng đấu">
             </div>
 
-            <button class="btn-start-match" onclick="startArenaMatch()">Bắt Đầu Trận Đấu (15s)</button>
+            <button class="btn-start-match" onclick="startArenaMatch('public')">Bắt Đầu Trận Đấu (15s)</button>
         </div>
 
-        <!-- Hub Right Cards -->
+        <!-- Hub Right Column: Customs & Leaderboard -->
         <div style="display: flex; flex-direction: column; gap: 15px;">
-            <div class="hub-card" style="flex:1; justify-content: center;">
-                <div class="hub-icon">🎮</div>
-                <div class="hub-title">Customs</div>
-                <div class="hub-desc" style="margin-bottom:0;">Tournaments & 1v1s</div>
+            <!-- Customs Card -->
+            <div class="hub-card clickable" onclick="openCustomModal()" style="padding: 20px;">
+                <div class="hub-icon" style="font-size:26px; margin-bottom:8px;">🎮</div>
+                <div class="hub-title" style="font-size:14px;">Customs</div>
+                <div class="hub-desc" style="margin-bottom:0; font-size:10px;">Tạo & Nhập mã phòng 1v1</div>
             </div>
-            <div class="hub-card" style="flex:1; justify-content: center;">
-                <div class="hub-icon">🗿</div>
-                <div class="hub-title">Statue Mode</div>
-                <div class="hub-desc" style="margin-bottom:0;">Mog without limits</div>
+
+            <!-- Leaderboard List Elo -->
+            <div class="hub-card" style="flex: 1; padding: 15px;">
+                <div class="hub-title" style="font-size: 13px; margin-bottom: 10px;">🏆 Leaderboard Elo</div>
+                <div class="rank-list">
+                    <div class="rank-item top1">
+                        <span>🥇 #1 GEEG</span>
+                        <span style="color:#f59e0b; font-weight:700;">4485 ELO</span>
+                    </div>
+                    <div class="rank-item">
+                        <span>🥈 #2 CHADLITE</span>
+                        <span style="color:#38bdf8; font-weight:700;">3920 ELO</span>
+                    </div>
+                    <div class="rank-item">
+                        <span>🥉 #3 MIRROR</span>
+                        <span style="color:#38bdf8; font-weight:700;">3410 ELO</span>
+                    </div>
+                    <div class="rank-item" style="border: 1px dashed rgba(168,85,247,0.4);">
+                        <span>👤 #862 AIOSIMA (Bạn)</span>
+                        <span id="leaderboard-my-elo" style="color:#a855f7; font-weight:700;">400 ELO</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -321,17 +402,15 @@
 
         <div class="match-grid">
             <!-- Khung Bạn -->
-            <div class="cam-box">
+            <div class="cam-box" id="my-cam-box-style">
                 <video id="webcam" autoplay playsinline muted></video>
                 
-                <!-- Bảng điểm Omegle Style -->
                 <div class="omg-score-card">
                     <div class="omg-score-title">Overall Score</div>
                     <div class="omg-score-num" id="my-live-score">--</div>
-                    <div class="omg-sub-info">⭐ HTN</div>
+                    <div class="omg-sub-info" id="my-sub-title-badge">⭐ HTN</div>
                 </div>
 
-                <!-- Profile Badge Góc Phải -->
                 <div class="omg-profile-badge">
                     <span style="font-size:14px;">🇻🇳</span>
                     <div>
@@ -372,11 +451,13 @@
         const remoteVideo = document.getElementById('remote-video');
         let latestLandmarks = null;
         let currentElo = 400; 
+        let userGems = 91;
         let peer, myStream;
         let matchTimer = 15;
         let matchInterval = null;
         let isPlaying = false;
         let myScoresList = [];
+        let ownedItems = [];
 
         function showToast(message) {
             const toast = document.getElementById('toast');
@@ -385,14 +466,75 @@
             setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
 
-        async function startArenaMatch() {
+        /* Quản lý Modal Shop Items */
+        function openShopModal() {
+            document.getElementById('shop-modal').style.display = 'flex';
+        }
+        function closeShopModal() {
+            document.getElementById('shop-modal').style.display = 'none';
+        }
+
+        function buyShopItem(itemId, price) {
+            if (ownedItems.includes(itemId)) {
+                showToast("Bạn đã sở hữu vật phẩm này rồi!");
+                return;
+            }
+            if (userGems < price) {
+                showToast("Không đủ Gems để mua vật phẩm!");
+                return;
+            }
+
+            userGems -= price;
+            ownedItems.push(itemId);
+            
+            // Cập nhật giao diện Gems
+            document.getElementById('hub-gems-text').innerText = userGems;
+            document.getElementById('shop-gems-display').innerText = userGems;
+
+            // Đổi trạng thái nút bấm trong shop
+            const btn = document.getElementById('btn-item-' + itemId);
+            btn.innerText = "ĐÃ MUA";
+            btn.classList.add('owned');
+
+            // Áp dụng trang trí trực tiếp lên profile
+            if (itemId === 1) {
+                document.getElementById('my-cam-box-style').style.borderColor = "#c084fc";
+                document.getElementById('my-cam-box-style').style.boxShadow = "0 0 25px rgba(168, 85, 247, 0.8)";
+                showToast("✨ Đã trang bị Khung Viền Neon Tím!");
+            } else if (itemId === 2) {
+                document.getElementById('my-sub-title-badge').innerText = "👑 Chads God";
+                showToast("👑 Đã trang bị danh hiệu Chads God!");
+            } else if (itemId === 3) {
+                showToast("🔥 Đã kích hoạt Hiệu ứng Lửa Cháy Vàng cho profile!");
+            }
+        }
+
+        /* Xử lý Modal Customs 1v1 */
+        function openCustomModal() {
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+        function closeCustomModal() {
+            document.getElementById('custom-modal').style.display = 'none';
+        }
+        function joinCustomRoom() {
+            const code = document.getElementById('custom-room-input').value.trim();
+            if (!code) {
+                showToast("Vui lòng nhập mã phòng custom!");
+                return;
+            }
+            document.getElementById('room-id-input').value = "custom-" + code;
+            closeCustomModal();
+            showToast("Đã chọn phòng: custom-" + code);
+            startArenaMatch('custom');
+        }
+
+        async function startArenaMatch(type) {
             const roomId = document.getElementById('room-id-input').value.trim();
             if (!roomId) {
                 showToast("Vui lòng nhập mã phòng!");
                 return;
             }
 
-            // Chuyển màn hình Hub sang Arena
             document.getElementById('hub-screen').style.display = 'none';
             document.getElementById('arena-screen').style.display = 'flex';
 
@@ -485,19 +627,22 @@
             let opponentAvg = 5.0; 
             let eloChange = 0;
 
-            // Thắng cộng 20, Thua trừ 20
             if (finalAvg >= opponentAvg) {
                 eloChange = 20;
                 currentElo += 20;
-                showToast(`🎉 THẮNG TRẬN! Điểm TB: ${finalAvg} (+20 ELO)`);
+                userGems += 10; // Thưởng thêm 10 Gems khi thắng trận
+                showToast(`🎉 THẮNG! Điểm TB: ${finalAvg} (+20 ELO, +10 Gems)`);
             } else {
                 eloChange = -20;
                 currentElo = Math.max(100, currentElo - 20);
-                showToast(`😢 THUA TRẬN! Điểm TB: ${finalAvg} (-20 ELO)`);
+                showToast(`😢 THUA! Điểm TB: ${finalAvg} (-20 ELO)`);
             }
 
+            document.getElementById('hub-gems-text').innerText = userGems;
+            document.getElementById('shop-gems-display').innerText = userGems;
             document.getElementById('arena-elo-display').innerText = currentElo + " ELO";
             document.getElementById('hub-elo-text').innerText = currentElo + " ELO";
+            document.getElementById('leaderboard-my-elo').innerText = currentElo + " ELO";
         }
 
         function leaveArena() {
