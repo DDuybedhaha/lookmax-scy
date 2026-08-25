@@ -214,6 +214,18 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+        .nut-chuyen-trang {
+            display: inline-block;
+            margin-top: 15px;
+            color: #38bdf8;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .nut-chuyen-trang:hover {
+            text-decoration: underline;
+        }
+
         /* Toast thông báo */
         #toast {
             position: fixed;
@@ -274,6 +286,12 @@
         <button id="btn-reset" class="btn-reset" onclick="resetScanner()" style="display: none;">Chụp lại</button>
     </div>
 
+    <p>
+        <a href="hoc_html2.html" class="nut-chuyen-trang">
+            -> tiếp tục để solo mog cho ae nhé!
+        </a>
+    </p>
+
     <script>
         const videoElement = document.getElementById('webcam');
         const snapshotCanvas = document.getElementById('snapshot-canvas');
@@ -317,10 +335,8 @@
             snapshotCanvas.width = videoElement.videoWidth || 640;
             snapshotCanvas.height = videoElement.videoHeight || 480;
             
-            snapshotCtx.save();
-            snapshotCtx.scale(-1, 1);
-            snapshotCtx.drawImage(videoElement, -snapshotCanvas.width, 0, snapshotCanvas.width, snapshotCanvas.height);
-            snapshotCtx.restore();
+            // Đã bỏ scale(-1, 1) để ảnh chụp khớp đúng với góc nhìn thực tế trên video
+            snapshotCtx.drawImage(videoElement, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
             
             snapshotCanvas.style.display = 'block';
 
@@ -372,7 +388,7 @@
             const eyeLevelDiff = Math.abs(leftEye.y - rightEye.y);
             let posturePenalty = eyeLevelDiff > 0.03 ? 0.5 : 1.0;
 
-            // 2. Chấm điểm Canthal Tilt (theo logic chuẩn cũ nhưng cho phép chạy dải mượt)
+            // 2. Chấm điểm Canthal Tilt
             const leftOuterY = lm[133].y;
             const leftInnerY = lm[33].y;
             const leftTiltDiff = leftInnerY - leftOuterY; 
@@ -412,7 +428,6 @@
             else if (midfaceRatio < 1.15) midfaceScore = 0.4;
             else midfaceScore = 0.2;
 
-            // Tính toán điểm tổng hợp dựa hoàn toàn trên logic gốc (không cộng thêm điểm ảo)
             const compositeScore = (jawScore * 0.45 + canthalScore * 0.35 + midfaceScore * 0.20) * posturePenalty;
             
             let rawScore = 2.8 + compositeScore * 4.0;
