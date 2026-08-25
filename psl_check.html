@@ -240,7 +240,7 @@
     <div class="display-container">
         <video id="webcam" playsinline></video>
         <canvas id="output_canvas"></canvas>
-        <canvas id="freeze_canvas" width="640" height="480"></canvas>
+        <canvas id="freeze_canvas" width="480" height="360"></canvas>
         
         <div id="hud-overlay">
             <div class="hud-title">⚡ ULTRA-STRICT PSL</div>
@@ -319,6 +319,7 @@
     let isScanning = false;
     let videoStream = null;
     let lastVideoTime = -1;
+    let frameCounter = 0; // Biến đếm khung hình để tối ưu hóa hiệu năng
     window.isCameraStopped = false;
 
     function showToast(message, duration = 3000) {
@@ -342,10 +343,10 @@
     }
 
     async function initCamera() {
-        canvasElement.width = 640;
-        canvasElement.height = 480;
-        freezeCanvas.width = 640;
-        freezeCanvas.height = 480;
+        canvasElement.width = 480;
+        canvasElement.height = 360;
+        freezeCanvas.width = 480;
+        freezeCanvas.height = 360;
         window.isCameraStopped = false;
 
         if (videoStream) {
@@ -375,7 +376,8 @@
                     latestLandmarks = results.multiFaceLandmarks[0];
                     canvasCtx.strokeStyle = 'rgba(246, 51, 102, 0.4)';
                     canvasCtx.lineWidth = 0.5;
-                    for (let i = 0; i < latestLandmarks.length; i += 5) {
+                    // Tăng bước nhảy lên 10 để giảm tải vẽ canvas giúp web mượt hơn
+                    for (let i = 0; i < latestLandmarks.length; i += 10) {
                         let p = latestLandmarks[i];
                         canvasCtx.strokeRect(p.x * canvasElement.width - 1, p.y * canvasElement.height - 1, 2, 2);
                     }
@@ -387,8 +389,9 @@
         }
 
         try {
+            // Hạ độ phân giải camera xuống 480x360 để giảm tải cho phần cứng
             videoStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+                video: { width: { ideal: 480 }, height: { ideal: 360 }, facingMode: "user" },
                 audio: false
             });
             videoElement.srcObject = videoStream;
@@ -408,7 +411,12 @@
         if (videoElement.readyState >= 2 && !isScanning) {
             if (videoElement.currentTime !== lastVideoTime) {
                 lastVideoTime = videoElement.currentTime;
-                await faceMesh.send({ image: videoElement });
+                
+                // Chỉ gọi AI xử lý cách nhau mỗi 2 khung hình để triệt tiêu hiện tượng giật lag
+                frameCounter++;
+                if (frameCounter % 2 === 0) {
+                    await faceMesh.send({ image: videoElement });
+                }
             }
         }
         requestAnimationFrame(predictWebcam);
@@ -554,7 +562,6 @@
                     top3Html = "<li>Chưa có ai lên bảng vàng.</li>";
                     restHtml = "<li>Trống.</li>";
                 } else {
-                    // Sắp xếp giảm dần theo điểm số (ép kiểu Number an toàn tuyệt đối)
                     data.sort((a, b) => {
                         let scoreA = parseFloat(a.score) || 0;
                         let scoreB = parseFloat(b.score) || 0;
@@ -611,7 +618,6 @@
         }
 
         const scoreText = document.getElementById('hud-score').innerText;
-        // Ép kiểu bắt buộc sang Number để tránh dính chuỗi ngày tháng ở Google Sheet
         const currentScore = Number(parseFloat(scoreText).toFixed(1));
         const currentRank = document.getElementById('hud-rank').innerText;
         
