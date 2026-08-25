@@ -87,34 +87,10 @@
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, #ff4757, #ffa502);
-            transition: width 0.1s linear;
+            transition: width 0.05s linear;
         }
 
-        /* Overlay Đếm ngược */
-        #countdown-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(10, 11, 16, 0.7);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 60px;
-            font-weight: 900;
-            color: #ffa502;
-            z-index: 20;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-        #countdown-overlay.show {
-            opacity: 1;
-        }
-
-        /* Bảng HUD thông số đã thu gọn và nằm độc lập bên dưới video */
+        /* Bảng thông số bên dưới video */
         .hud-panel {
             width: 100%;
             max-width: 500px;
@@ -276,19 +252,16 @@
             <div id="scan-progress" class="scan-progress-bar"></div>
         </div>
 
-        <div id="countdown-overlay">3</div>
-
         <video id="webcam" autoplay playsinline muted></video>
         <canvas id="snapshot-canvas"></canvas>
         <canvas id="output_canvas"></canvas>
     </div>
 
-    <!-- Bảng thông số chuyển hẳn xuống dưới video -->
     <div class="hud-panel">
         <div class="score-box">
             <div class="score-title">Hardcore Overall Score</div>
             <div class="score-value" id="hud-score">--</div>
-            <div class="score-rank" id="hud-rank">Hãy bấm nút để quét gương mặt...</div>
+            <div class="score-rank" id="hud-rank">Hãy tạo dáng và bấm chụp...</div>
         </div>
         <div class="hud-item"><span>Canthal Tilt</span> <span id="hud-canthal">--</span></div>
         <div class="hud-item"><span>Jawline Ratio</span> <span id="hud-jaw">--</span></div>
@@ -297,16 +270,16 @@
     </div>
 
     <div class="action-panel">
-        <button id="btn-capture" class="btn-scan" onclick="startScanProcess()">📸 Bắt đầu quét góc mặt</button>
-        <button id="btn-reset" class="btn-reset" onclick="resetScanner()" style="display: none;">Quét lại</button>
+        <button id="btn-capture" class="btn-scan" onclick="captureAndFreeze()">📸 Chụp & Phân tích ngay</button>
+        <button id="btn-reset" class="btn-reset" onclick="resetScanner()" style="display: none;">Chụp lại</button>
     </div>
 
     <script>
         const videoElement = document.getElementById('webcam');
         const snapshotCanvas = document.getElementById('snapshot-canvas');
         const snapshotCtx = snapshotCanvas.getContext('2d');
-        let isScanning = false;
         let latestLandmarks = null;
+        let isCaptured = false;
 
         function showToast(message) {
             const toast = document.getElementById('toast');
@@ -333,47 +306,17 @@
             return "Raw Sub5 ⚠️";
         }
 
-        async function startScanProcess() {
-            const btnCapture = document.getElementById('btn-capture');
-            btnCapture.disabled = true;
-            
-            const countdownEl = document.getElementById('countdown-overlay');
-            let count = 3;
-            countdownEl.innerText = count;
-            countdownEl.classList.add('show');
+        // Bấm nút là freeze ngay lập tức và giữ nguyên trạng thái đóng băng cho đến khi chấm xong
+        function captureAndFreeze() {
+            if (!latestLandmarks) {
+                showToast("⚠️ Chưa nhận diện được khuôn mặt! Hãy canh lại camera.");
+                return;
+            }
 
-            let timer = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownEl.innerText = count;
-                } else {
-                    clearInterval(timer);
-                    countdownEl.classList.remove('show');
-                    runAnalysisScan();
-                }
-            }, 1000);
-        }
+            // Đánh dấu đã chụp để dừng camera feed
+            isCaptured = true;
 
-        function runAnalysisScan() {
-            isScanning = true;
-            let progress = 0;
-            const progressBar = document.getElementById('scan-progress');
-            document.getElementById('hud-rank').innerText = "Đang phân tích chỉ số nhân trắc...";
-
-            let scanInterval = setInterval(() => {
-                progress += 2;
-                progressBar.style.width = progress + '%';
-                document.getElementById('hud-score').innerText = progress + '%';
-
-                if (progress >= 100) {
-                    clearInterval(scanInterval);
-                    isScanning = false;
-                    freezeCameraAndDisplay();
-                }
-            }, 30);
-        }
-
-        function freezeCameraAndDisplay() {
+            // 1. Chụp hình đưa lên canvas để freeze khung hình
             snapshotCanvas.width = videoElement.videoWidth || 640;
             snapshotCanvas.height = videoElement.videoHeight || 480;
             
@@ -384,34 +327,47 @@
             
             snapshotCanvas.style.display = 'block';
 
-            if (latestLandmarks) {
-                processHardcorePSL(latestLandmarks);
-            } else {
-                showToast("Không tìm thấy khuôn mặt! Hãy thử lại.");
-                resetScanner();
-                return;
-            }
+            // Khóa nút bấm
+            document.getElementById('btn-capture').disabled = true;
+            document.getElementById('hud-rank').innerText = "Đang phân tích chỉ số...";
 
-            document.getElementById('btn-capture').style.display = 'none';
-            document.getElementById('btn-reset').style.display = 'block';
-            showToast("✨ Đã đóng băng và hoàn tất phân tích!");
+            // 2. Chạy thanh tiến trình giả lập xử lý trong 1.5 giây
+            let progress = 0;
+            const progressBar = document.getElementById('scan-progress');
+
+            let interval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = progress + '%';
+                document.getElementById('hud-score').innerText = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    // 3. Hoàn tất chấm điểm, hiển thị kết quả (khung hình vẫn tiếp tục giữ nguyên freeze)
+                    processHardcorePSL(latestLandmarks);
+                    
+                    // Chuyển nút bấm thành nút Chụp lại
+                    document.getElementById('btn-capture').style.display = 'none';
+                    document.getElementById('btn-capture').disabled = false;
+                    document.getElementById('btn-reset').style.display = 'block';
+                    showToast("✨ Đã chấm xong điểm nhân trắc học!");
+                }
+            }, 75);
         }
 
         function resetScanner() {
+            isCaptured = false;
             snapshotCanvas.style.display = 'none';
             document.getElementById('scan-progress').style.width = '0%';
             document.getElementById('hud-score').innerText = '--';
-            document.getElementById('hud-rank').innerText = 'Hãy bấm nút để quét gương mặt...';
+            document.getElementById('hud-rank').innerText = 'Hãy tạo dáng và bấm chụp...';
             document.getElementById('hud-canthal').innerText = '--';
             document.getElementById('hud-jaw').innerText = '--';
             document.getElementById('hud-midface').innerText = '--';
             document.getElementById('hud-dimorph').innerText = '--';
 
             document.getElementById('btn-reset').style.display = 'none';
-            const btnCapture = document.getElementById('btn-capture');
-            btnCapture.style.display = 'block';
-            btnCapture.disabled = false;
-            latestLandmarks = null;
+            document.getElementById('btn-capture').style.display = 'block';
+            showToast("🔄 Đã mở lại camera!");
         }
 
         function processHardcorePSL(lm) {
@@ -482,14 +438,16 @@
         });
 
         faceMesh.onResults((results) => {
-            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            if (!isCaptured && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                // Chỉ cập nhật landmark liên tục khi CHƯA bấm chụp
                 latestLandmarks = results.multiFaceLandmarks[0];
             }
         });
 
         const camera = new Camera(videoElement, {
             onFrame: async () => {
-                if (snapshotCanvas.style.display !== 'block') {
+                // Nếu đã bấm chụp thì dừng gửi frame vào model để giữ nguyên khung hình freeze
+                if (!isCaptured) {
                     await faceMesh.send({ image: videoElement });
                 }
             },
@@ -499,7 +457,7 @@
 
         camera.start()
             .then(() => {
-                showToast("⚡ Đã sẵn sàng. Hãy bấm nút để quét!");
+                showToast("⚡ Hệ thống đã sẵn sàng!");
             })
             .catch((err) => {
                 showToast("Lỗi mở Camera!");
